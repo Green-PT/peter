@@ -77,13 +77,24 @@ re-derives the contract. It must contain, concretely:
 - **Acceptance criteria** — numbered, each checkable by a test.
 - **API contract** — endpoints, payload shapes, error codes. Written *before*
   frontend and backend split, or they can't run in parallel.
+- **Zone map** — the path globs each zone owns, and whether they are **disjoint**.
+  Frameworks that co-locate server and client in one file (Next.js server actions
+  and route handlers, SvelteKit `+page.server.ts`, Rails, Django) do not have
+  disjoint zones. Say so here: it decides whether a task can be dispatched in
+  parallel at all (§B4).
 - **Visual reference** — the pixel bar. One of: a design file/screenshot the user
   supplied, a URL to match, or a design spec you write and state back for
   confirmation. **"Pixel perfect" with no reference is not a bar** — degrade it
   to "matches the stated design spec" and say so.
-- **Stack and commands** — exact test, typecheck, lint, build, and E2E commands.
-- **E2E environment** — test database, migration and seed strategy, which builder
-  owns `e2e/`. See `references/e2e-gate.md`.
+- **Stack and commands** — exact test, typecheck, lint, build, and E2E commands,
+  plus the **run command, the base URL the app serves on, and the port range
+  reserved for the `ui-auditor`** — distinct from the E2E suite's. The auditor
+  grades a *running* app; with no way to start one it returns `app unreachable`
+  and the UI bar is never applied.
+- **E2E environment** — what E2E means for this project type, test database,
+  migration and seed strategy, which builder owns `e2e/`, and — only if no form
+  of it applies — `no-e2e: <reason>` with every criterion mapped to an
+  integration test instead. See `references/e2e-gate.md`.
 - **Scope of audits** — which routes/flows the auditors must cover.
 
 Ambiguity budget: at most 2 clarifying questions, asked together, only when a
@@ -140,12 +151,20 @@ While ready tasks exist and bounds hold:
    `closed`).
 2. **Assert clean working tree.** Dirty → stop and report; never paper over it.
 3. **Claim**: append `in_progress` to `graph.jsonl`.
-4. **Implement.** Trivial and single-zone → inline. Otherwise delegate,
-   in parallel where the task spans zones, contract already fixed in `spec.md`:
-   - `backend-builder` — API, schema, auth, server tests
-   - `frontend-builder` — UI, components, state, client tests
+4. **Implement.** Trivial and single-zone → inline. Otherwise delegate, in
+   parallel where the task spans zones **and the zone map says the globs are
+   disjoint**, contract already fixed in `spec.md`:
+   - `backend-builder` — everything that doesn't render: API, schema, auth, CLI,
+     library, data pipeline, infra scripts, and their tests
+   - `frontend-builder` — everything that renders: UI, components, state,
+     styling, and their tests
    Each prompt carries absolute paths, the contract, the task's `criteria[]`,
    and its zone memory (`zones/<zone>.md`). Nodes inherit nothing.
+   **Overlapping zones are single-writer.** When the zone map is not disjoint, a
+   `zone: both` task goes to **one** builder owning the whole task. The fence is
+   what makes a parallel pair safe, and a shared file has no fence — two builders
+   editing one module is the corruption the single-writer rule exists to prevent.
+   Pick the builder by the task's centre of gravity and say which in the dispatch.
    **A parallel builder pair is one task, never two.** Two tasks dispatched at
    once share a working tree and therefore a commit, which breaks
    one-commit-per-task. When audit failures split by owner, file them as a single
@@ -198,8 +217,12 @@ In order, on every iteration — cheap gates first, stop at the first failure:
 2. typecheck
 3. lint
 4. build
-5. **E2E** — real server, real database, migrated from scratch, seeded.
-   Bar and flake policy: `references/e2e-gate.md`
+5. **E2E** — the real thing running, in whatever form the project type takes:
+   browser, HTTP client, spawned binary, installed package, or the pipeline over
+   real fixture data. Real database where one exists, migrated from scratch and
+   seeded. Skipped only when `spec.md` declares `no-e2e: <reason>` — reported as
+   skipped, never folded into a pass. Per-type definition, bar, and flake policy:
+   `references/e2e-gate.md`
 
 A node never reports its own tests as passing. The parent runs the commands and
 reads the output.
@@ -261,8 +284,10 @@ the author of the code is a different, weaker bar. Report it as not run.
   UX/semantics.
 - Anything requiring a push, a config change, or files outside the project.
 - Two consecutive infrastructure/API errors.
-- The work needs a 5th specialty — re-run the `decompose` gate; never invent a
-  node mid-run.
+- The work needs a 5th specialty — a **tool or model none of the four roles has**
+  (mobile simulator, notebook runtime, a different provider). A non-web domain is
+  not a 5th specialty: CLIs, libraries, data pipelines, and infra scripts are
+  `backend-builder`'s. Re-run the `decompose` gate; never invent a node mid-run.
 
 On any stop: report tasks closed, commits made, tasks filed, and the exact
 failing clauses. **A failed gate reported honestly beats a passed gate that was
@@ -299,7 +324,7 @@ per-epic and disposable; this is not (see
                    /      |        |       \
     backend-builder  frontend-builder  security-auditor(RO)  ui-auditor(RO)
           |               |                |                    |
-      api/ + tests    ui/ + tests    security.json          ui.json
+   non-UI code+tests  UI code+tests   security.json          ui.json
           ^               ^                |                    |
           +---------------+----------------+--------------------+
                         failures[], max 2 loopbacks

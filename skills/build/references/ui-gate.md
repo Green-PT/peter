@@ -5,6 +5,12 @@ actually rendered — audit the running page, not the source. Use browser tools:
 `read_page` for the accessibility tree, `computer` for keyboard and screenshots,
 `resize_window` for reflow and dark mode.
 
+**Getting the app up is the parent's job, not a guess.** `spec.md` names the run
+command, the base URL, and a port range reserved for this audit — separate from
+the E2E suite's, so the two never contend. The parent passes all three in the
+dispatch. Missing them, the auditor returns `app unreachable` and the UI bar was
+not applied; that is a gate failure to report, never a quiet pass.
+
 Report findings with a selector or file:line plus what you observed. Never flag a
 criterion you did not check — mark it `not_applicable` instead.
 

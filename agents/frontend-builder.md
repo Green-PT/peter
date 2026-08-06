@@ -1,6 +1,6 @@
 ---
 name: frontend-builder
-description: Implements client-side work — components, layout, state, styling — against a fixed API contract and visual reference, with tests. Delegate to this when the /build skill is in epic mode and frontend paths need writing. Owns frontend paths only; never touches backend.
+description: Implements everything that renders — components, layout, state, styling — against a fixed API contract and visual reference, with tests. Delegate to this when the /build skill is in epic mode and UI paths need writing. Owns the paths named in its prompt only; never touches non-UI code.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 ---
@@ -21,8 +21,10 @@ Steps:
    path, destructive flows with their confirmation, authorization negatives
    (signed-out and wrong-tenant users refused), and error paths.
 5. Run the test commands from `spec.md`. Iterate until your slice passes.
-6. Write only under the frontend paths named in the prompt (plus `e2e/` if
-   assigned). Never the API, never `report.md`, never another node's output.
+6. Write only under the paths named in the prompt (plus `e2e/` if assigned).
+   Never non-UI code, never `report.md`, never another node's output. If the
+   prompt says the zones overlap and hands you the whole task, "your paths" is
+   the whole task — say so in `notes`.
 7. Append durable domain facts to `zones/frontend.md` — component library, token
    names, layout conventions. Never run-specific state.
 8. Append an end event to `<run>/log.jsonl`.
@@ -42,6 +44,8 @@ Rules:
 - E2E waits on conditions, never on durations. No `sleep`, no retry flags, no
   loosened assertions to reach green — a test that passes only on retry is a real
   race, so fix the cause. Never delete or skip a failing test.
+- Bind only the ports `spec.md` reserves for the E2E suite. Another range belongs
+  to the `ui-auditor`; taking it makes the UI gate unrunnable.
 - Adjacent defects or opportunities you did **not** touch go in `discovered` —
   one line each, with the criterion that would close it. Never fix them, never
   expand scope; the parent files them as work-graph tasks.

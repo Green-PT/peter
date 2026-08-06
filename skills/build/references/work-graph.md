@@ -35,7 +35,7 @@ Fields:
 | `type` | yes | `epic` \| `task` |
 | `parent` | tasks | the epic id |
 | `deps` | tasks | ids that must be `closed` before this is ready |
-| `zone` | tasks | `backend` \| `frontend` \| `both` — who implements |
+| `zone` | tasks | `backend` (anything that doesn't render — API, CLI, library, pipeline, infra) \| `frontend` (anything that renders) \| `both`. Path globs per zone are in `spec.md`; when they overlap, `both` means one builder owns the whole task |
 | `prio` | no | 1 high … 3 low; default 2 |
 | `status` | yes | `open` \| `in_progress` \| `closed` |
 | `criteria` | tasks | acceptance criteria — written at filing, before any code |
