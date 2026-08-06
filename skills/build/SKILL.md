@@ -27,7 +27,14 @@ verifier is a draft, and drafts are what this skill exists to prevent.
 
 ## 0. Gate — loop or epic?
 
-Run the `decompose` gate. Score the seven signals there. Most tasks are a loop.
+**Resume check, before the gate.** If `<repo-root>/runs/<epic-id>/graph.jsonl`
+already exists for the goal in hand, this is a resumed epic, not a new one:
+**do not re-plan and do not rewrite `spec.md`.** Fold the graph (latest record
+per id), switch to `epic/<epic-id>`, assert a clean tree, append an `open`
+record — full payload — for anything left `in_progress` with a note that it was
+interrupted, and enter Phase B at step 1. Planning on top of a live graph
+duplicates tasks and orphans the commits already made. The gate below is for
+new work only.
 
 - **Loop (score 0–4)** — no subagents, no run directory, no branch, no work
   graph. Spec and bars inline, implement inline, run the machine gates (§G),
@@ -96,6 +103,11 @@ re-derives the contract. It must contain, concretely:
   of it applies — `no-e2e: <reason>` with every criterion mapped to an
   integration test instead. See `references/e2e-gate.md`.
 - **Scope of audits** — which routes/flows the auditors must cover.
+- **Gate baseline** — run §G once, before any code, and record where each gate
+  starts: `pass`, `fail: <what>`, or `none: <no command in this project>`.
+- **`<epic-id>`** — `E-` plus a short slug of the goal. If `runs/<epic-id>/`
+  already exists you are resuming, not planning (§0); if it exists and its epic
+  record is `closed`, take the next free `-2` suffix and name the prior run here.
 
 Ambiguity budget: at most 2 clarifying questions, asked together, only when a
 wrong guess would waste the whole build. Otherwise pick the obvious default,
@@ -207,7 +219,9 @@ until done, ceiling, or a stop condition.
    epic.
 3. Append `closed` for the epic; write `runs/<epic-id>/report.md`.
 4. Prune any `zones/*.md` past ~a page.
-5. Print the **proposed** merge command. Never run it.
+5. Print the **proposed** merge command, naming `runs/<epic-id>/` and `zones/`
+   as part of what it carries across, so keeping or stripping the process
+   artifacts is a decision rather than a surprise. Never run it.
 
 ## §G. Machine gates — parent runs these, never a node
 
@@ -227,6 +241,13 @@ In order, on every iteration — cheap gates first, stop at the first failure:
 A node never reports its own tests as passing. The parent runs the commands and
 reads the output.
 
+**Gates are judged against the A1 baseline, not against zero.** A repo that
+starts with a red test does not get to fail every task for it — only failures
+**new** relative to the baseline belong to the task in flight. A pre-existing
+failure is filed as a task and competes on `prio`; it never burns a task's
+loopbacks and never blocks a close. A gate with no command in this project is
+reported as `none`, not silently skipped and not invented.
+
 **A test that passes only on retry is a failing gate.** Never add retries,
 `sleep`, or loosened assertions to reach green — fix the race. Never delete a
 failing test to close the loop.
@@ -239,9 +260,11 @@ close: both, full scope. In loop mode: only if the change touches their scope.
 - `security-auditor` — OWASP Top 10:2025. Bar: `references/security-gate.md`
 - `ui-auditor` — WCAG 2.2 level AA + visual fidelity. Bar: `references/ui-gate.md`
 
-Both are read-only by allowlist, both return
+Neither has write tools, both return
 `{verdict, score, failures[{id, severity, clause, evidence, fix}]}`. The parent
-parses `verdict` and branches on the field. Never on prose.
+parses `verdict` and branches on the field. Never on prose. Their `Bash` is for
+read-only commands — the dependency audit, starting the app — a rule stated in
+the agent files, not something the tool list can enforce.
 
 Route each failure to the node that owns the file. Security findings at
 `severity: critical|high` block the build regardless of score.

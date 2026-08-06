@@ -12,25 +12,23 @@ Inputs arrive as absolute paths in the prompt. You inherit nothing — no workin
 directory, no prior conversation, no files not named for you.
 
 Steps:
-1. Append a start event to `<run>/log.jsonl`.
-2. Read `spec.md` and your zone memory (`zones/backend.md`) if named.
-3. Write the tests for your slice of the acceptance criteria first, then the
+1. Read `spec.md` and your zone memory (`zones/backend.md`) if named.
+2. Write the tests for your slice of the acceptance criteria first, then the
    implementation that satisfies them.
-4. If the prompt assigns you `e2e/` (any build with nothing rendering): write
+3. If the prompt assigns you `e2e/` (any build with nothing rendering): write
    end-to-end tests driving the real entry point named in `spec.md` — running
    server, spawned binary, imported package, or one full pipeline run — against
    a real database where there is one, migrated from scratch and seeded. One
    test per acceptance criterion in `spec.md` unless marked unit-only. Cover the
    critical path, destructive flows, authorization negatives (unauthenticated
    and wrong-tenant callers refused), and error paths.
-5. Run the test commands from `spec.md`. Iterate until your own slice passes.
-6. Write only under the paths named in the prompt (plus `e2e/` if assigned).
+4. Run the test commands from `spec.md`. Iterate until your own slice passes.
+5. Write only under the paths named in the prompt (plus `e2e/` if assigned).
    Never UI code, never `report.md`, never another node's output. If the prompt
    says the zones overlap and hands you the whole task, "your paths" is the
    whole task — say so in `notes`.
-7. Append durable domain facts to `zones/backend.md` — conventions, where auth
+6. Append durable domain facts to `zones/backend.md` — conventions, where auth
    lives, gotchas. Never run-specific state.
-8. Append an end event to `<run>/log.jsonl`.
 
 Rules:
 - The contract in `spec.md` is fixed. If it's wrong or ambiguous, do not

@@ -12,22 +12,20 @@ Inputs arrive as absolute paths in the prompt. You inherit nothing — no workin
 directory, no prior conversation, no files not named for you.
 
 Steps:
-1. Append a start event to `<run>/log.jsonl`.
-2. Read `spec.md` (API contract + visual reference) and `zones/frontend.md` if named.
-3. Write component/interaction tests for your slice first, then the implementation.
-4. If the prompt assigns you `e2e/`: write end-to-end tests driving the real app
+1. Read `spec.md` (API contract + visual reference) and `zones/frontend.md` if named.
+2. Write component/interaction tests for your slice first, then the implementation.
+3. If the prompt assigns you `e2e/`: write end-to-end tests driving the real app
    against a real server and database. One test per acceptance criterion in
    `spec.md`, unless the spec marks that criterion unit-only. Cover the critical
    path, destructive flows with their confirmation, authorization negatives
    (signed-out and wrong-tenant users refused), and error paths.
-5. Run the test commands from `spec.md`. Iterate until your slice passes.
-6. Write only under the paths named in the prompt (plus `e2e/` if assigned).
+4. Run the test commands from `spec.md`. Iterate until your slice passes.
+5. Write only under the paths named in the prompt (plus `e2e/` if assigned).
    Never non-UI code, never `report.md`, never another node's output. If the
    prompt says the zones overlap and hands you the whole task, "your paths" is
    the whole task — say so in `notes`.
-7. Append durable domain facts to `zones/frontend.md` — component library, token
+6. Append durable domain facts to `zones/frontend.md` — component library, token
    names, layout conventions. Never run-specific state.
-8. Append an end event to `<run>/log.jsonl`.
 
 Rules:
 - Build against the contract's payload shapes exactly. Mock them; do not change

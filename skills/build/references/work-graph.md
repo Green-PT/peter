@@ -66,9 +66,9 @@ arrives:
 | Task fails its gates twice | leave `open` with a `note`; stop condition |
 | Priority shifts | append the task with a new `prio` |
 
-Every mutation is one appended line (it *is* the log of structural change) plus
-the normal `log.jsonl` event. Never rewrite roles, tools, or models mid-run —
-org-graph changes are a redeploy.
+Every mutation is one appended line — this file *is* the log of structural
+change, which is why nothing is ever edited out of it. Never rewrite roles,
+tools, or models mid-run — org-graph changes are a redeploy.
 
 ## Discovered work
 
