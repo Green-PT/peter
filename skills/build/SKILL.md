@@ -85,8 +85,8 @@ mid-drain. Audits are never part of a degraded run; see §A.
 
 ### A1. Spec and bars
 
-Write `runs/<epic-id>/spec.md` — epic-level, shared by every task so no task
-re-derives the contract. It must contain, concretely:
+Write `<repo-root>/runs/<epic-id>/spec.md` — epic-level, shared by every task so
+no task re-derives the contract. It must contain, concretely:
 
 - **Acceptance criteria** — numbered, each checkable by a test.
 - **API contract** — endpoints, payload shapes, error codes. Written *before*
@@ -115,6 +115,13 @@ re-derives the contract. It must contain, concretely:
 - **`<epic-id>`** — `E-` plus a short slug of the goal. If `runs/<epic-id>/`
   already exists you are resuming, not planning (§0); if it exists and its epic
   record is `closed`, take the next free `-2` suffix and name the prior run here.
+
+**A section that doesn't apply is `n/a: <why>`, never padded.** Half this list
+assumes something renders or serves HTTP. A CLI, a library, or a pipeline marks
+the visual reference, the run URL, the auditor port range, and the UI audit
+scope `n/a` in one line each — and then §B6 never dispatches the `ui-auditor`,
+because there is nothing to render. Writing a plausible-sounding visual bar for
+a thing with no pixels is how a spec starts lying.
 
 Ambiguity budget: at most 2 clarifying questions, asked together, only when a
 wrong guess would waste the whole build. Otherwise pick the obvious default,
@@ -352,7 +359,7 @@ Run directory, `graph.jsonl`, zone memory, and the single-writer table:
 
 Stable roles in `~/.claude/agents/` — the work graph in `graph.jsonl` is
 per-epic and disposable; this is not (see
-`decompose/references/graph-engineering.md`):
+`~/.claude/skills/decompose/references/graph-engineering.md`):
 
 ```
                     [parent — orchestrator]

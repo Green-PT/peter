@@ -3,7 +3,8 @@
 The per-epic work graph: what needs doing right now, dependency-ordered,
 append-only, committed. The org graph (stable roles) lives in
 `~/.claude/agents/`; terminology and the patterns adopted here:
-`decompose/references/graph-engineering.md`. This file is the runtime contract.
+`~/.claude/skills/decompose/references/graph-engineering.md`. This file is the
+runtime contract.
 
 ## Records
 
