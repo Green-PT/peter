@@ -3,7 +3,8 @@
 The per-epic work graph: what needs doing right now, dependency-ordered,
 append-only, committed. The org graph (stable roles) lives in
 `~/.claude/agents/`; terminology and the patterns adopted here:
-`decompose/references/graph-engineering.md`. This file is the runtime contract.
+`~/.claude/skills/decompose/references/graph-engineering.md`. This file is the
+runtime contract.
 
 ## Records
 
@@ -35,7 +36,7 @@ Fields:
 | `type` | yes | `epic` \| `task` |
 | `parent` | tasks | the epic id |
 | `deps` | tasks | ids that must be `closed` before this is ready |
-| `zone` | tasks | `backend` \| `frontend` \| `both` — who implements |
+| `zone` | tasks | `backend` (anything that doesn't render — API, CLI, library, pipeline, infra) \| `frontend` (anything that renders) \| `both`. Path globs per zone are in `spec.md`; when they overlap, `both` means one builder owns the whole task |
 | `prio` | no | 1 high … 3 low; default 2 |
 | `status` | yes | `open` \| `in_progress` \| `closed` |
 | `criteria` | tasks | acceptance criteria — written at filing, before any code |
@@ -66,9 +67,9 @@ arrives:
 | Task fails its gates twice | leave `open` with a `note`; stop condition |
 | Priority shifts | append the task with a new `prio` |
 
-Every mutation is one appended line (it *is* the log of structural change) plus
-the normal `log.jsonl` event. Never rewrite roles, tools, or models mid-run —
-org-graph changes are a redeploy.
+Every mutation is one appended line — this file *is* the log of structural
+change, which is why nothing is ever edited out of it. Never rewrite roles,
+tools, or models mid-run — org-graph changes are a redeploy.
 
 ## Discovered work
 

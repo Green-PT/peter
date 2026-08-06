@@ -27,12 +27,43 @@ verifier is a draft, and drafts are what this skill exists to prevent.
 
 ## 0. Gate — loop or epic?
 
-Run the `decompose` gate. Score the seven signals there. Most tasks are a loop.
+**Resume check, before the gate.** If `<repo-root>/runs/<epic-id>/graph.jsonl`
+already exists for the goal in hand, this is a resumed epic, not a new one:
+**do not re-plan and do not rewrite `spec.md`.** Fold the graph (latest record
+per id), switch to `epic/<epic-id>`, assert a clean tree, append an `open`
+record — full payload — for anything left `in_progress` with a note that it was
+interrupted, and enter Phase B at step 1. Planning on top of a live graph
+duplicates tasks and orphans the commits already made. The gate below is for
+new work only.
+
+**Greenfield discovery, also before the gate — both modes.** Fires only when
+both hold: the project has no stack to read (no manifest, no source) **and** the
+request names none. In an existing repo the stack is a fact on disk — asking is
+noise; go straight to the gate. A small greenfield build is still greenfield: it
+scores low, stays a loop, and still needs this.
+
+- Propose the boring default in plain words, one message: language, storage,
+  how it runs. "Web app, TypeScript everywhere, SQLite so there's nothing to
+  install, one command to run — fine?" Defaults-first: never a menu of
+  frameworks, never a question that needs technical vocabulary to answer.
+- One confirmation, then autonomy as before. This spends one of A1's two
+  clarifying questions — greenfield stack choice is the canonical "wrong guess
+  wastes the whole build".
+- Record the confirmed stack plus a ~5-line architecture sketch (major pieces
+  and what talks to what) in `spec.md` in epic mode, inline in loop mode.
+  Builders inherit it; no task re-derives it.
+
+Now the gate. Run `decompose` and score its seven signals. Most tasks are a loop.
 
 - **Loop (score 0–4)** — no subagents, no run directory, no branch, no work
   graph. Spec and bars inline, implement inline, run the machine gates (§G),
   then §A audits only if the change touches auth/data (security) or renders UI
-  (a11y). Skip everything else below.
+  (a11y). Skip everything else below. There is no `spec.md` in loop mode, so:
+  gate commands come from what's on disk — the manifest's scripts, the CI
+  config, the Makefile — and a gate with no command there is reported `none`,
+  never invented; the §G baseline still applies, captured before the first edit;
+  and **commit only if the user asked**, branching first if they did and you are
+  on the default branch. Loop mode never creates an `epic/` branch.
 - **Epic (score 5–7)** — full-stack or multi-task work, parallel builders,
   read-only auditors, context that won't fit one window. Run Phases A–C.
 
@@ -52,39 +83,45 @@ mid-drain. Audits are never part of a degraded run; see §A.
 
 ## Phase A — Plan (parent only, before any code)
 
-### A0. Greenfield discovery — only when the stack isn't on disk
-
-Fires only when both hold: the project has no stack to read (no manifest, no
-source) **and** the request names none. In an existing repo the stack is a fact
-on disk — asking is noise; skip to A1.
-
-- Propose the boring default in plain words, one message: language, storage,
-  how it runs. "Web app, TypeScript everywhere, SQLite so there's nothing to
-  install, one command to run — fine?" Defaults-first: never a menu of
-  frameworks, never a question that needs technical vocabulary to answer.
-- One confirmation, then autonomy as before. This spends one of A1's two
-  clarifying questions — greenfield stack choice is the canonical "wrong guess
-  wastes the whole build".
-- Record the confirmed stack plus a ~5-line architecture sketch (major pieces
-  and what talks to what) in `spec.md`. Builders inherit it; no task re-derives
-  it.
-
 ### A1. Spec and bars
 
-Write `runs/<epic-id>/spec.md` — epic-level, shared by every task so no task
-re-derives the contract. It must contain, concretely:
+Write `<repo-root>/runs/<epic-id>/spec.md` — epic-level, shared by every task so
+no task re-derives the contract. It must contain, concretely:
 
 - **Acceptance criteria** — numbered, each checkable by a test.
 - **API contract** — endpoints, payload shapes, error codes. Written *before*
   frontend and backend split, or they can't run in parallel.
+- **Zone map** — the path globs each zone owns, and whether they are **disjoint**.
+  Frameworks that co-locate server and client in one file (Next.js server actions
+  and route handlers, SvelteKit `+page.server.ts`, Rails, Django) do not have
+  disjoint zones. Say so here: it decides whether a task can be dispatched in
+  parallel at all (§B4).
 - **Visual reference** — the pixel bar. One of: a design file/screenshot the user
   supplied, a URL to match, or a design spec you write and state back for
   confirmation. **"Pixel perfect" with no reference is not a bar** — degrade it
   to "matches the stated design spec" and say so.
-- **Stack and commands** — exact test, typecheck, lint, build, and E2E commands.
-- **E2E environment** — test database, migration and seed strategy, which builder
-  owns `e2e/`. See `references/e2e-gate.md`.
+- **Stack and commands** — exact test, typecheck, lint, build, and E2E commands,
+  plus the **run command, the base URL the app serves on, and the port range
+  reserved for the `ui-auditor`** — distinct from the E2E suite's. The auditor
+  grades a *running* app; with no way to start one it returns `app unreachable`
+  and the UI bar is never applied.
+- **E2E environment** — what E2E means for this project type, test database,
+  migration and seed strategy, which builder owns `e2e/`, and — only if no form
+  of it applies — `no-e2e: <reason>` with every criterion mapped to an
+  integration test instead. See `references/e2e-gate.md`.
 - **Scope of audits** — which routes/flows the auditors must cover.
+- **Gate baseline** — run §G once, before any code, and record where each gate
+  starts: `pass`, `fail: <what>`, or `none: <no command in this project>`.
+- **`<epic-id>`** — `E-` plus a short slug of the goal. If `runs/<epic-id>/`
+  already exists you are resuming, not planning (§0); if it exists and its epic
+  record is `closed`, take the next free `-2` suffix and name the prior run here.
+
+**A section that doesn't apply is `n/a: <why>`, never padded.** Half this list
+assumes something renders or serves HTTP. A CLI, a library, or a pipeline marks
+the visual reference, the run URL, the auditor port range, and the UI audit
+scope `n/a` in one line each — and then §B6 never dispatches the `ui-auditor`,
+because there is nothing to render. Writing a plausible-sounding visual bar for
+a thing with no pixels is how a spec starts lying.
 
 Ambiguity budget: at most 2 clarifying questions, asked together, only when a
 wrong guess would waste the whole build. Otherwise pick the obvious default,
@@ -140,12 +177,20 @@ While ready tasks exist and bounds hold:
    `closed`).
 2. **Assert clean working tree.** Dirty → stop and report; never paper over it.
 3. **Claim**: append `in_progress` to `graph.jsonl`.
-4. **Implement.** Trivial and single-zone → inline. Otherwise delegate,
-   in parallel where the task spans zones, contract already fixed in `spec.md`:
-   - `backend-builder` — API, schema, auth, server tests
-   - `frontend-builder` — UI, components, state, client tests
+4. **Implement.** Trivial and single-zone → inline. Otherwise delegate, in
+   parallel where the task spans zones **and the zone map says the globs are
+   disjoint**, contract already fixed in `spec.md`:
+   - `backend-builder` — everything that doesn't render: API, schema, auth, CLI,
+     library, data pipeline, infra scripts, and their tests
+   - `frontend-builder` — everything that renders: UI, components, state,
+     styling, and their tests
    Each prompt carries absolute paths, the contract, the task's `criteria[]`,
    and its zone memory (`zones/<zone>.md`). Nodes inherit nothing.
+   **Overlapping zones are single-writer.** When the zone map is not disjoint, a
+   `zone: both` task goes to **one** builder owning the whole task. The fence is
+   what makes a parallel pair safe, and a shared file has no fence — two builders
+   editing one module is the corruption the single-writer rule exists to prevent.
+   Pick the builder by the task's centre of gravity and say which in the dispatch.
    **A parallel builder pair is one task, never two.** Two tasks dispatched at
    once share a working tree and therefore a commit, which breaks
    one-commit-per-task. When audit failures split by owner, file them as a single
@@ -188,7 +233,9 @@ until done, ceiling, or a stop condition.
    epic.
 3. Append `closed` for the epic; write `runs/<epic-id>/report.md`.
 4. Prune any `zones/*.md` past ~a page.
-5. Print the **proposed** merge command. Never run it.
+5. Print the **proposed** merge command, naming `runs/<epic-id>/` and `zones/`
+   as part of what it carries across, so keeping or stripping the process
+   artifacts is a decision rather than a surprise. Never run it.
 
 ## §G. Machine gates — parent runs these, never a node
 
@@ -198,11 +245,22 @@ In order, on every iteration — cheap gates first, stop at the first failure:
 2. typecheck
 3. lint
 4. build
-5. **E2E** — real server, real database, migrated from scratch, seeded.
-   Bar and flake policy: `references/e2e-gate.md`
+5. **E2E** — the real thing running, in whatever form the project type takes:
+   browser, HTTP client, spawned binary, installed package, or the pipeline over
+   real fixture data. Real database where one exists, migrated from scratch and
+   seeded. Skipped only when `spec.md` declares `no-e2e: <reason>` — reported as
+   skipped, never folded into a pass. Per-type definition, bar, and flake policy:
+   `references/e2e-gate.md`
 
 A node never reports its own tests as passing. The parent runs the commands and
 reads the output.
+
+**Gates are judged against the A1 baseline, not against zero.** A repo that
+starts with a red test does not get to fail every task for it — only failures
+**new** relative to the baseline belong to the task in flight. A pre-existing
+failure is filed as a task and competes on `prio`; it never burns a task's
+loopbacks and never blocks a close. A gate with no command in this project is
+reported as `none`, not silently skipped and not invented.
 
 **A test that passes only on retry is a failing gate.** Never add retries,
 `sleep`, or loosened assertions to reach green — fix the race. Never delete a
@@ -216,9 +274,11 @@ close: both, full scope. In loop mode: only if the change touches their scope.
 - `security-auditor` — OWASP Top 10:2025. Bar: `references/security-gate.md`
 - `ui-auditor` — WCAG 2.2 level AA + visual fidelity. Bar: `references/ui-gate.md`
 
-Both are read-only by allowlist, both return
+Neither has write tools, both return
 `{verdict, score, failures[{id, severity, clause, evidence, fix}]}`. The parent
-parses `verdict` and branches on the field. Never on prose.
+parses `verdict` and branches on the field. Never on prose. Their `Bash` is for
+read-only commands — the dependency audit, starting the app — a rule stated in
+the agent files, not something the tool list can enforce.
 
 Route each failure to the node that owns the file. Security findings at
 `severity: critical|high` block the build regardless of score.
@@ -232,6 +292,20 @@ every round. Resume the same auditor where the runtime allows: it keeps its
 measurement setup and can compare against its own prior evidence, which is how it
 catches regressions in its own findings. Give it the diff and tell it to be
 sceptical of the changelog.
+
+**A `fix:` is a hypothesis; `clause:` is the bar.** Route the clause, not the
+sentence. An auditor proposing a fix is guessing at a cause from outside the
+code, and it can name the wrong measurement — a contrast fix specified as "ring
+vs card" gets implemented faithfully and verified against exactly that adjacency
+when the one that mattered was ring vs button. Tell the builder which clause it
+must satisfy, and have the re-audit **re-derive the measurement from the clause**
+rather than re-checking the one its predecessor named.
+
+**Reseed before an audit that follows a destructive probe.** Auditors have no
+write tools but they drive a running app, and that mutates the database the E2E
+suite and the next audit read. Auditors stop before irreversible actions and
+report in `notes` anything they did change; the parent reseeds, and never lets a
+later gate run against data an audit disturbed.
 
 **The node that fixes a finding is never the only one testing it.** Its tests
 carry the blind spot that produced the defect — a builder that fixes a focus bug
@@ -250,7 +324,7 @@ the author of the code is a different, weaker bar. Report it as not run.
 - `max_loopbacks`: 2 per gate. Then stop and report the failing clauses.
 - Node types: 4. Parallel instances of one type count once.
 - Each delegation carries an explicit stop condition, never "until done".
-- Never commit to the default branch; never merge; never push.
+- Never commit to the default branch — in either mode; never merge; never push.
 
 ## Stop conditions — halt, dispatch nothing further, report
 
@@ -261,8 +335,10 @@ the author of the code is a different, weaker bar. Report it as not run.
   UX/semantics.
 - Anything requiring a push, a config change, or files outside the project.
 - Two consecutive infrastructure/API errors.
-- The work needs a 5th specialty — re-run the `decompose` gate; never invent a
-  node mid-run.
+- The work needs a 5th specialty — a **tool or model none of the four roles has**
+  (mobile simulator, notebook runtime, a different provider). A non-web domain is
+  not a 5th specialty: CLIs, libraries, data pipelines, and infra scripts are
+  `backend-builder`'s. Re-run the `decompose` gate; never invent a node mid-run.
 
 On any stop: report tasks closed, commits made, tasks filed, and the exact
 failing clauses. **A failed gate reported honestly beats a passed gate that was
@@ -282,6 +358,12 @@ both `pass`, no unresolved `critical`/`high`. Then report, in this order:
    finding with its reason.
 5. The proposed merge command.
 
+**An audit that could not run keeps the build out of Done.** No dispatch
+available, app unreachable, no auditor — report `security: not run` or
+`ui: not run` with the reason and say plainly that the bar was never applied.
+A missing verdict is not a passing one. A degraded run produces a change that
+passed its machine gates and nothing more; call it that.
+
 ## State
 
 Run directory, `graph.jsonl`, zone memory, and the single-writer table:
@@ -291,7 +373,7 @@ Run directory, `graph.jsonl`, zone memory, and the single-writer table:
 
 Stable roles in `~/.claude/agents/` — the work graph in `graph.jsonl` is
 per-epic and disposable; this is not (see
-`decompose/references/graph-engineering.md`):
+`~/.claude/skills/decompose/references/graph-engineering.md`):
 
 ```
                     [parent — orchestrator]
@@ -299,7 +381,7 @@ per-epic and disposable; this is not (see
                    /      |        |       \
     backend-builder  frontend-builder  security-auditor(RO)  ui-auditor(RO)
           |               |                |                    |
-      api/ + tests    ui/ + tests    security.json          ui.json
+   non-UI code+tests  UI code+tests   security.json          ui.json
           ^               ^                |                    |
           +---------------+----------------+--------------------+
                         failures[], max 2 loopbacks

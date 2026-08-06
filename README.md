@@ -18,14 +18,20 @@ skills/build/SKILL.md            the loop + epic orchestration
 skills/build/references/         work-graph, state, e2e/security/ui gate specs
 agents/{backend,frontend}-builder.md   zone-fenced implementers
 agents/{security,ui}-auditor.md        read-only verdict-only auditors
+install.sh                       sync with ~/.claude
 ```
+
+Zones are defined by what the code does, not where it sits: `backend-builder`
+owns everything that doesn't render — API, CLI, library, pipeline, infra —
+and `frontend-builder` owns everything that does. Where a framework co-locates
+both in one file, the task goes to one builder; the write fence is what makes a
+parallel pair safe, and a shared file has no fence.
 
 ## Install
 
 ```bash
-cp -R skills/build ~/.claude/skills/build
-cp agents/*.md ~/.claude/agents/
+./install.sh
 ```
 
-`~/.claude` is not version-controlled; this repo is the tracked copy. Re-copy in
-either direction after editing.
+`~/.claude` is not version-controlled; this repo is the tracked copy.
+`./install.sh pull` copies the other way, `./install.sh check` reports drift.
