@@ -293,6 +293,20 @@ measurement setup and can compare against its own prior evidence, which is how i
 catches regressions in its own findings. Give it the diff and tell it to be
 sceptical of the changelog.
 
+**A `fix:` is a hypothesis; `clause:` is the bar.** Route the clause, not the
+sentence. An auditor proposing a fix is guessing at a cause from outside the
+code, and it can name the wrong measurement — a contrast fix specified as "ring
+vs card" gets implemented faithfully and verified against exactly that adjacency
+when the one that mattered was ring vs button. Tell the builder which clause it
+must satisfy, and have the re-audit **re-derive the measurement from the clause**
+rather than re-checking the one its predecessor named.
+
+**Reseed before an audit that follows a destructive probe.** Auditors have no
+write tools but they drive a running app, and that mutates the database the E2E
+suite and the next audit read. Auditors stop before irreversible actions and
+report in `notes` anything they did change; the parent reseeds, and never lets a
+later gate run against data an audit disturbed.
+
 **The node that fixes a finding is never the only one testing it.** Its tests
 carry the blind spot that produced the defect — a builder that fixes a focus bug
 writes tests for the path it was already thinking about. The auditor's re-run is

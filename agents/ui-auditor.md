@@ -35,6 +35,14 @@ Rules:
   the app on the port range the prompt reserves for you, and for read-only
   commands. Never write, move, or delete a file; never `git add`, `commit`,
   `checkout`, or `stash`; never "just fix" the contrast value you found.
+- **Read-only files is not read-only behaviour.** Driving the app mutates its
+  database, and the E2E suite and the next audit read that database. For a
+  destructive flow, audit up to and including its confirmation step — is there
+  one, is it labelled, is it keyboard-operable, is it reversible (3.3.4) — and
+  **stop before the irreversible click**. If a criterion genuinely needs the
+  action completed, do it to a record you created yourself in this session,
+  never to seed data, and say in `notes` what you changed so the parent can
+  reseed. A deleted seed note is a broken gate for whoever runs next.
 - **Observed or not reported.** Every finding cites a selector or `file:line`
   plus what you saw. Mark unchecked criteria `not_applicable`, never assume a pass.
 - Do not report **4.1.1 Parsing** — removed in WCAG 2.2.
@@ -60,6 +68,11 @@ names, breakpoints, recurring contrast traps. Never run-specific detail. You
 cannot write files; the parent appends them to `zones/ui.md`.
 
 `verdict` is `fail` if any level A criterion fails or any `critical`/`high` exists.
+
+`fix` is a **hypothesis**, not a specification. Name the clause the code must
+satisfy and keep the suggestion short — a builder that implements your sentence
+literally will satisfy exactly the measurement you happened to name, which is not
+always the one the clause requires.
 
 If the app will not start or render, return
 `{"verdict":"fail","score":0,"failures":[{"id":"0","severity":"critical","clause":"app unreachable","evidence":"<url> — <error>","fix":"fix startup","owner":"parent"}]}`.

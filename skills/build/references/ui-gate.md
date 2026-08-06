@@ -77,7 +77,9 @@ criterion you did not check — mark it `not_applicable` instead.
   instructions present — placeholder is not a label.
 - **3.3.3** Error messages suggest the correction.
 - **3.3.4** Legal, financial, and data-deleting submissions are reversible,
-  checked, or confirmed.
+  checked, or confirmed. Audit the confirmation step, not the deletion — stop
+  before the irreversible click, or act only on a record you created yourself.
+  The database you are driving is the one the E2E gate reads next.
 - **3.3.7 Redundant Entry (new in 2.2)** — information already entered in the same
   process is auto-populated or selectable, not retyped.
 - **3.3.8 Accessible Authentication (new in 2.2)** — no cognitive function test

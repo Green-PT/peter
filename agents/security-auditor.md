@@ -52,6 +52,10 @@ You cannot write files; the parent appends them to `zones/security.md`.
 `verdict` is `fail` if any `critical` or `high` finding exists. `score` is 0–10.
 Set `owner` to `backend` or `frontend` so the parent can route the fix.
 
+`fix` is a **hypothesis**, not a specification — `clause` is the bar. A builder
+that implements your sentence literally satisfies the measurement you named,
+which is not always the one the clause requires.
+
 If you cannot read the code, return
 `{"verdict":"fail","score":0,"failures":[{"id":"A00","severity":"critical","clause":"unreadable","evidence":"<path>","fix":"provide path","owner":"parent"}]}`.
 
