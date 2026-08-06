@@ -36,10 +36,34 @@ interrupted, and enter Phase B at step 1. Planning on top of a live graph
 duplicates tasks and orphans the commits already made. The gate below is for
 new work only.
 
+**Greenfield discovery, also before the gate — both modes.** Fires only when
+both hold: the project has no stack to read (no manifest, no source) **and** the
+request names none. In an existing repo the stack is a fact on disk — asking is
+noise; go straight to the gate. A small greenfield build is still greenfield: it
+scores low, stays a loop, and still needs this.
+
+- Propose the boring default in plain words, one message: language, storage,
+  how it runs. "Web app, TypeScript everywhere, SQLite so there's nothing to
+  install, one command to run — fine?" Defaults-first: never a menu of
+  frameworks, never a question that needs technical vocabulary to answer.
+- One confirmation, then autonomy as before. This spends one of A1's two
+  clarifying questions — greenfield stack choice is the canonical "wrong guess
+  wastes the whole build".
+- Record the confirmed stack plus a ~5-line architecture sketch (major pieces
+  and what talks to what) in `spec.md` in epic mode, inline in loop mode.
+  Builders inherit it; no task re-derives it.
+
+Now the gate. Run `decompose` and score its seven signals. Most tasks are a loop.
+
 - **Loop (score 0–4)** — no subagents, no run directory, no branch, no work
   graph. Spec and bars inline, implement inline, run the machine gates (§G),
   then §A audits only if the change touches auth/data (security) or renders UI
-  (a11y). Skip everything else below.
+  (a11y). Skip everything else below. There is no `spec.md` in loop mode, so:
+  gate commands come from what's on disk — the manifest's scripts, the CI
+  config, the Makefile — and a gate with no command there is reported `none`,
+  never invented; the §G baseline still applies, captured before the first edit;
+  and **commit only if the user asked**, branching first if they did and you are
+  on the default branch. Loop mode never creates an `epic/` branch.
 - **Epic (score 5–7)** — full-stack or multi-task work, parallel builders,
   read-only auditors, context that won't fit one window. Run Phases A–C.
 
@@ -58,23 +82,6 @@ parent does Phase A and the machine gates inline — instead of discovering it
 mid-drain. Audits are never part of a degraded run; see §A.
 
 ## Phase A — Plan (parent only, before any code)
-
-### A0. Greenfield discovery — only when the stack isn't on disk
-
-Fires only when both hold: the project has no stack to read (no manifest, no
-source) **and** the request names none. In an existing repo the stack is a fact
-on disk — asking is noise; skip to A1.
-
-- Propose the boring default in plain words, one message: language, storage,
-  how it runs. "Web app, TypeScript everywhere, SQLite so there's nothing to
-  install, one command to run — fine?" Defaults-first: never a menu of
-  frameworks, never a question that needs technical vocabulary to answer.
-- One confirmation, then autonomy as before. This spends one of A1's two
-  clarifying questions — greenfield stack choice is the canonical "wrong guess
-  wastes the whole build".
-- Record the confirmed stack plus a ~5-line architecture sketch (major pieces
-  and what talks to what) in `spec.md`. Builders inherit it; no task re-derives
-  it.
 
 ### A1. Spec and bars
 
@@ -296,7 +303,7 @@ the author of the code is a different, weaker bar. Report it as not run.
 - `max_loopbacks`: 2 per gate. Then stop and report the failing clauses.
 - Node types: 4. Parallel instances of one type count once.
 - Each delegation carries an explicit stop condition, never "until done".
-- Never commit to the default branch; never merge; never push.
+- Never commit to the default branch — in either mode; never merge; never push.
 
 ## Stop conditions — halt, dispatch nothing further, report
 
@@ -329,6 +336,12 @@ both `pass`, no unresolved `critical`/`high`. Then report, in this order:
 4. What was deliberately not done, any quarantined test, and any accepted-risk
    finding with its reason.
 5. The proposed merge command.
+
+**An audit that could not run keeps the build out of Done.** No dispatch
+available, app unreachable, no auditor — report `security: not run` or
+`ui: not run` with the reason and say plainly that the bar was never applied.
+A missing verdict is not a passing one. A degraded run produces a change that
+passed its machine gates and nothing more; call it that.
 
 ## State
 
