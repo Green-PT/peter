@@ -40,7 +40,7 @@ Fields:
 | `deps` | tasks | ids that must be `closed` before this is ready |
 | `zone` | tasks | `backend` (anything that doesn't render — API, CLI, library, pipeline, infra) \| `frontend` (anything that renders) \| `both`. Always a dispatchable builder route, never `epic` — work the parent performs itself (close sweep, live smoke) is Phase C, not a task. Path globs per zone are in `spec.md`; when they overlap, `both` means one builder owns the whole task |
 | `prio` | no | 1 high … 3 low; default 2 (discovered tasks: default 3) |
-| `status` | yes | `open` \| `in_progress` \| `closed` |
+| `status` | yes | `open` \| `in_progress` \| `blocked` \| `closed` |
 | `criteria` | tasks | acceptance criteria — pass/fail bars, written at filing, before any code |
 | `sha` | on close | the task's single commit sha — real and existing, never `"pending"` |
 | `discovered-from` | discovered | the task or sweep whose run surfaced this |
@@ -60,7 +60,10 @@ never in `deps`; still `open` at close → listed in the report.
 ## Ready
 
 Fold the file: merge per id, latest field wins. A task is **ready** iff
-`status == "open"` and every id in `deps` folds to `closed`. **The drain is
+`status == "open"` and every id in `deps` folds to `closed`. `blocked` is never
+ready — loopback counts reset each session, so re-dispatching would retry the
+same wall unbounded. Only an operator-appended `open` record re-enters it; the
+drain and the resume check never do. **The drain is
 scoped**: it dispatches planned tasks, plus discovered tasks only when they
 block an epic acceptance criterion. A discovery that blocks none is backlog —
 ready but never drained, open through close, listed in the report. Dispatch
@@ -77,7 +80,7 @@ arrives:
 |---|---|
 | Scope expands | append a new task (`discovered-from` set); if it needs a 5th *specialty*, stop — re-run the `decompose` gate |
 | Tasks converge / one becomes moot | append `closed` with `note` `"merged into <id>"` or `"moot: <why>"` — never delete the line |
-| Task fails its gates twice | leave `open` with a `note`; stop condition |
+| Task fails its gates twice | append `blocked`, `note` naming the failing clauses; stop condition |
 | Priority shifts | append the task with a new `prio` |
 
 Every mutation is one appended line — this file *is* the log of structural
@@ -97,7 +100,8 @@ unworked — the report lists what's left open.
 
 ## Epic close — and after
 
-The epic `closed` record carries `commits[]`, `open[]` (the backlog left), and
+The epic `closed` record carries `commits[]`, `open[]` (every task not folding
+`closed` — backlog and `blocked` alike), and
 `audits` (§C2's sweep verdicts — `not_run: <reason>` keeps the epic out of
 Done). A close record silent on audits is not a close. A closed epic is not a
 tombstone: to work its backlog later, append an epic `open` record (reopen)

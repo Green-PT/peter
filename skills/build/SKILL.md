@@ -32,7 +32,9 @@ already exists for the goal in hand, this is a resumed epic, not a new one:
 **do not re-plan and do not rewrite `spec.md`.** Fold the graph (merge per id,
 latest field wins), switch to `epic/<epic-id>`, assert a clean tree, append an
 `open` record for anything left `in_progress` with a note that it was
-interrupted, and enter Phase B at step 1. If every planned task already folds
+interrupted, and enter Phase B at step 1. `blocked` tasks stay blocked — name
+them in the first message; re-opening one is the operator's move, never the
+resume's. If every planned task already folds
 `closed` and only backlog remains, resume at Phase C instead — an epic drains
 in scope, then closes over its backlog; it does not grind the backlog first.
 Planning on top of a live graph duplicates tasks and orphans the commits
@@ -362,8 +364,9 @@ the author of the code is a different, weaker bar. Report it as not run.
 
 ## Stop conditions — halt, dispatch nothing further, report
 
-- A task fails its gates twice (after the 2 loopbacks). Leave it `open` with
-  notes on what's wrong; do not force a third pass.
+- A task fails its gates twice (after the 2 loopbacks). Append `blocked` with
+  the failing clauses in `note`; do not force a third pass. Only an
+  operator-appended `open` record re-enters it — resume never does.
 - Any full-suite regression.
 - A decision needs operator input: spec ambiguity, scope change, unsettled
   UX/semantics.
@@ -385,7 +388,8 @@ Ship only when: machine gates green including E2E, epic-close audit verdicts
 both `pass`, no unresolved `critical`/`high`. Then report, in this order:
 
 1. What was built, in two sentences.
-2. Tasks closed (id → commit sha), tasks left open or discovered for later.
+2. Tasks closed (id → commit sha), tasks left open, blocked, or discovered for
+   later.
 3. Gate results — unit/typecheck/lint/build, E2E (passed/failed/skipped +
    acceptance-criteria coverage map), security verdict + score, UI verdict + score.
 4. What was deliberately not done, every protocol deviation with its cause,
