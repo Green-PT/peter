@@ -96,6 +96,11 @@ real race — fix the cause:
 - No shared mutable state between tests; each creates what it needs.
 - Order-independent. If the suite fails when shuffled, it's broken.
 
+When the race lives in a file the task in flight cannot write — `e2e/` owned by
+another builder — diagnosing it with artifacts is still this iteration's job;
+the fix routes to the owner (§B step 5 attribution) and burns no loopbacks
+here. "Flaky" without a diagnosis is a failing gate, not a category.
+
 Quarantining a known-flaky test is allowed once, with the reason recorded in
 `report.md` and the test still listed as unresolved. Silently deleting a failing
 test is never allowed.

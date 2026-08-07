@@ -81,8 +81,10 @@ state:
   auditors' `zone_facts` return field.
 
 Durable domain facts only — the stack's conventions, where auth lives, which
-component library, recurring gotchas, the threat model. Never run-specific
-state. The parent prunes each past ~a page.
+component library, recurring gotchas, the threat model. A few terse lines per
+fact; never run-specific state, never a narrative of what a builder just did.
+The parent prunes each past ~a page **before it rides in a dispatch prompt**,
+not only at epic close — every dispatch pays the file's length.
 
 ## Handoff
 

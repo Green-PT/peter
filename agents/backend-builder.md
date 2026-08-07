@@ -28,7 +28,8 @@ Steps:
    says the zones overlap and hands you the whole task, "your paths" is the
    whole task — say so in `notes`.
 6. Append durable domain facts to `zones/backend.md` — conventions, where auth
-   lives, gotchas. Never run-specific state.
+   lives, gotchas. A few terse lines per fact. Never run-specific state, never
+   a narrative of what you just did — every future dispatch pays for each line.
 
 Rules:
 - The contract in `spec.md` is fixed. If it's wrong or ambiguous, do not
