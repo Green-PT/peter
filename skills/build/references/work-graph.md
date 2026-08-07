@@ -46,7 +46,7 @@ Fields:
 | `discovered-from` | discovered | the task or sweep whose run surfaced this |
 | `evidence` | no | discovered tasks: the observation that motivated filing, verbatim — never mixed into `criteria` |
 | `audits` | epic close | sweep verdicts: `{"security":{"verdict","score"},"ui":{"verdict","score"}}`, or `"not_run: <reason>"` |
-| `note` | no | one line of context; `fix:` hypotheses live here, never in `criteria` |
+| `note` | no | one line of context; `fix:` hypotheses live here, never in `criteria`. On `blocked`, prefixed: `gates: <clauses>` \| `needs-input: <question>` |
 
 `criteria` are checkable against a diff — bars, not findings. A pasted finding
 ("X is broken because Y; fix: Z") is unadjudicable: the observation goes in
@@ -80,7 +80,8 @@ arrives:
 |---|---|
 | Scope expands | append a new task (`discovered-from` set); if it needs a 5th *specialty*, stop — re-run the `decompose` gate |
 | Tasks converge / one becomes moot | append `closed` with `note` `"merged into <id>"` or `"moot: <why>"` — never delete the line |
-| Task fails its gates twice | append `blocked`, `note` naming the failing clauses; stop condition |
+| Task fails its gates twice | append `blocked`, `note` `gates: <clauses>`; stop condition |
+| A decision needs the operator | append `blocked`, `note` `needs-input: <question>`; stop condition |
 | Priority shifts | append the task with a new `prio` |
 
 Every mutation is one appended line — this file *is* the log of structural

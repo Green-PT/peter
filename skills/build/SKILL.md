@@ -48,8 +48,8 @@ already exists for the goal in hand, this is a resumed epic, not a new one:
 latest field wins), switch to `epic/<epic-id>`, assert a clean tree, append an
 `open` record for anything left `in_progress` with a note that it was
 interrupted, and enter Phase B at step 1. `blocked` tasks stay blocked — name
-them in the first message; re-opening one is the operator's move, never the
-resume's. If every planned task already folds
+them in the first message with their `note`s — a `needs-input:` question is
+re-asked verbatim; re-opening one is the operator's move, never the resume's. If every planned task already folds
 `closed` and only backlog remains, resume at Phase C instead — an epic drains
 in scope, then closes over its backlog; it does not grind the backlog first.
 Planning on top of a live graph duplicates tasks and orphans the commits
@@ -82,7 +82,9 @@ Now the gate. Run `decompose` and score its seven signals. Most tasks are a loop
   config, the Makefile — and a gate with no command there is reported `none`,
   never invented; the §G baseline still applies, captured before the first edit;
   and **commit only if the user asked**, branching first if they did and you are
-  on the default branch. Loop mode never creates an `epic/` branch.
+  on the default branch. Loop mode never creates an `epic/` branch. One line at
+  each phase entry — `Step 2/4 — implement; next: machine gates` — counting only
+  the phases this build gets, naming an auditor while one runs.
 - **Epic (score 5–7)** — full-stack or multi-task work, parallel builders,
   read-only auditors, context that won't fit one window. Run Phases A–C.
 
@@ -189,9 +191,10 @@ Unmapped criteria fail the gate.
 
 Commit `spec.md` + `graph.jsonl` on the epic branch (`<epic-id>: plan`) before
 the first dispatch — Phase B step 2 asserts a clean tree, and the plan must be
-in the record before code exists. E2E flows in a dedicated final task (owned by
-the `e2e/` owner), with unit/component bars per earlier task, is the intended
-shape.
+in the record before code exists. Then print the plan's status table (§S) —
+the operator's first sight of the run's shape. E2E flows in a dedicated final
+task (owned by the `e2e/` owner), with unit/component bars per earlier task, is
+the intended shape.
 
 ## Phase B — Dispatch loop
 
@@ -202,7 +205,8 @@ While ready tasks exist and bounds hold:
    acceptance criterion. Non-blocking discoveries are backlog — never
    drained; the epic closes over them.
 2. **Assert clean working tree.** Dirty → stop and report; never paper over it.
-3. **Claim**: append `in_progress` to `graph.jsonl`.
+3. **Claim**: append `in_progress` to `graph.jsonl`; print the status table
+   (§S), naming who is about to run.
 4. **Implement.** Trivial and single-zone → inline. Otherwise delegate, in
    parallel where the task spans zones **and the zone map says the globs are
    disjoint**, contract already fixed in `spec.md`:
@@ -243,7 +247,8 @@ While ready tasks exist and bounds hold:
    per-task audit verdicts. The
    close record cannot live inside the commit it names; amending to fold it in
    changes the very sha it just recorded. Let it ride in a
-   `graph: close <id> @ <sha>` commit or in the next task's. Otherwise loop back
+   `graph: close <id> @ <sha>` commit or in the next task's. Print the close
+   line (§S). Otherwise loop back
    (max 2 per gate), then it's a stop condition.
 9. **File discovered work**: append new task records with `discovered-from`.
    Builders return it in `discovered[]`; the parent files it — **bars, not
@@ -260,8 +265,10 @@ While ready tasks exist and bounds hold:
     a builder from repairing what it broke on the other side of the fence, so an
     unrouted contract change is silent breakage, not isolation.
 
-Then loop to 1. Between tasks there is no check-in — the epic runs unattended
-until done, ceiling, or a stop condition.
+Then loop to 1. Between tasks there is no check-in — the epic waits on no
+reply until done, ceiling, or a stop condition. Unattended, not silent: the
+status table (§S) prints at every claim, each close emits its one-liner, and
+neither ever pauses the run.
 
 ## Phase C — Epic close
 
@@ -371,6 +378,36 @@ Auditors are the one role the parent may never fill itself. Machine gates and
 even implementation can be inlined when delegation is unavailable; a verdict from
 the author of the code is a different, weaker bar. Report it as not run.
 
+## §S. Status table — broadcast, never a question
+
+Autonomous is not silent. The table derives from the folded graph plus the
+dispatch in flight — never a new file — and prints at the plan commit (A5),
+each claim (naming who is about to run), every stop, and Done. Each close
+emits one line instead: `T3 done @ a1b2c3d — 3/5; next: T4`. The shape,
+exactly:
+
+```
+**E-checkout** on `epic/E-checkout` — 2/5 done · backlog 1
+
+| Task | Status |
+|---|---|
+| T1 cart API | done a1b2c3d |
+| T2 cart UI | done e4f5a6b |
+| T3 checkout API | running — backend-builder, then security audit |
+| T4 checkout UI | next |
+| T5 e2e flows | open — waits on T3, T4 |
+
+Now: T3 checkout API. Next: T4 checkout UI.
+```
+
+Statuses, exactly these: `done <sha>` · `running — <agents, or inline>` ·
+`next` — the drain's next pick · `open — waits on <deps>` · `blocked — <note>`,
+the note keeping its `gates:`/`needs-input:` prefix. Rows are in-scope tasks
+in file order; backlog is the header count, never rows; blocked rows always
+show. The Now/Next line ends every table. Print and move on — a table never
+waits for a reply. Only at a stop does it arrive with the failing clauses or
+the open question and **what the operator must do to continue** — then halt.
+
 ## Bounds
 
 - One task in flight at a time.
@@ -383,12 +420,14 @@ the author of the code is a different, weaker bar. Report it as not run.
 
 ## Stop conditions — halt, dispatch nothing further, report
 
-- A task fails its gates twice (after the 2 loopbacks). Append `blocked` with
-  the failing clauses in `note`; do not force a third pass. Only an
+- A task fails its gates twice (after the 2 loopbacks). Append `blocked`,
+  `note` `gates: <the failing clauses>`; do not force a third pass. Only an
   operator-appended `open` record re-enters it — resume never does.
 - Any full-suite regression.
 - A decision needs operator input: spec ambiguity, scope change, unsettled
-  UX/semantics.
+  UX/semantics. Append `blocked` on the task in flight, `note`
+  `needs-input: <the question>` — durable, so resume re-surfaces it; no task
+  in flight → a `note` record carrying the question.
 - Anything requiring a push, a config change, or files outside the project.
 - Two consecutive infrastructure/API errors.
 - The work needs a 5th specialty — a **tool or model none of the four roles has**
@@ -396,8 +435,8 @@ the author of the code is a different, weaker bar. Report it as not run.
   not a 5th specialty: CLIs, libraries, data pipelines, and infra scripts are
   `backend-builder`'s. Re-run the `decompose` gate; never invent a node mid-run.
 
-On any stop: report tasks closed, commits made, tasks filed, and the exact
-failing clauses. **A failed gate reported honestly beats a passed gate that was
+On any stop: the status table (§S), then the exact failing clauses or the
+open question — closed, filed, and blocked all read off the table. **A failed gate reported honestly beats a passed gate that was
 downgraded to make it pass.** Never relax a bar to close the loop; never mark
 `pass` on a verdict the auditor didn't give.
 
@@ -407,8 +446,7 @@ Ship only when: machine gates green including E2E, epic-close audit verdicts
 both `pass`, no unresolved `critical`/`high`. Then report, in this order:
 
 1. What was built, in two sentences.
-2. Tasks closed (id → commit sha), tasks left open, blocked, or discovered for
-   later.
+2. The final status table (§S) — every task's end state.
 3. Gate results — unit/typecheck/lint/build, E2E (passed/failed/skipped +
    acceptance-criteria coverage map), security verdict + score, UI verdict + score.
 4. What was deliberately not done, every protocol deviation with its cause,
