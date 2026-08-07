@@ -8,24 +8,26 @@ runtime contract.
 
 ## Records
 
-One JSON object per line. Append-only — a status change is a **new full record
-for the same `id`; the latest record for an id wins**. Nobody edits or deletes
-a line; history is the audit trail.
+One JSON object per line. Append-only — a status change is a new record for the
+same `id`. Nobody edits or deletes a line; history is the audit trail.
 
-*Full* is load-bearing. The fold keeps only the latest record, so a partial one —
-`{"id":"T1","status":"in_progress"}`, or `criteria` shortened to a pointer —
-silently deletes the `criteria[]` that §B7 adjudicates the diff against. Repeat
-the whole payload every time; partial records are illegal.
+**The fold merges per id, field by field**: records for an id apply in file
+order — a later field overwrites, an absent field inherits, an explicit `null`
+clears. A status-only append (`{"id":"T1","type":"task","status":"in_progress"}`)
+is legal and cannot lose the `criteria[]` that §B7 adjudicates the diff against.
+(Latest-record-wins is retired: every live run shed fields under it.)
 
 A `closed` record is appended **after** its commit exists, and therefore rides in
-a later commit — it cannot be inside the commit whose sha it carries.
+a later commit — it cannot be inside the commit whose sha it carries, and `sha`
+is a real sha from `git log`, never a placeholder. Closing a task onto a
+`closed` epic is illegal — append the epic reopen first (see Epic close).
 
 ```jsonl
 {"id":"E-ratelimit","type":"epic","title":"Rate limiting","status":"open"}
-{"id":"T1","type":"task","parent":"E-ratelimit","deps":[],"zone":"backend","prio":1,"status":"open","criteria":["429 after N reqs in window"]}
-{"id":"T1","type":"task","parent":"E-ratelimit","deps":[],"zone":"backend","prio":1,"status":"in_progress","criteria":["429 after N reqs in window"]}
-{"id":"T1","type":"task","parent":"E-ratelimit","deps":[],"zone":"backend","prio":1,"status":"closed","commit":"a1b2c3d","criteria":["429 after N reqs in window"]}
-{"id":"T3","type":"task","parent":"E-ratelimit","deps":[],"zone":"backend","prio":2,"status":"open","discovered-from":"T1","criteria":["conn pool does not leak under load"]}
+{"id":"T1","type":"task","deps":[],"zone":"backend","prio":1,"status":"open","criteria":["429 after N reqs in window"]}
+{"id":"T1","type":"task","status":"in_progress"}
+{"id":"T1","type":"task","status":"closed","sha":"a1b2c3d"}
+{"id":"T3","type":"task","deps":[],"zone":"backend","prio":3,"status":"open","discovered-from":"T1","evidence":["pool exhausted at 120 conns during T1 e2e"],"criteria":["conn pool does not leak under load"]}
 ```
 
 Fields:
@@ -33,27 +35,38 @@ Fields:
 | Field | Req | Meaning |
 |---|---|---|
 | `id` | yes | short, unique in the epic (`T1`…); epic ids `E-<slug>` |
-| `type` | yes | `epic` \| `task` |
-| `parent` | tasks | the epic id |
+| `type` | yes | `epic` \| `task` \| `note` |
+| `parent` | no | the epic id — redundant in a per-epic file; omit |
 | `deps` | tasks | ids that must be `closed` before this is ready |
-| `zone` | tasks | `backend` (anything that doesn't render — API, CLI, library, pipeline, infra) \| `frontend` (anything that renders) \| `both`. Path globs per zone are in `spec.md`; when they overlap, `both` means one builder owns the whole task |
-| `prio` | no | 1 high … 3 low; default 2 |
+| `zone` | tasks | `backend` (anything that doesn't render — API, CLI, library, pipeline, infra) \| `frontend` (anything that renders) \| `both`. Always a dispatchable builder route, never `epic` — work the parent performs itself (close sweep, live smoke) is Phase C, not a task. Path globs per zone are in `spec.md`; when they overlap, `both` means one builder owns the whole task |
+| `prio` | no | 1 high … 3 low; default 2 (discovered tasks: default 3) |
 | `status` | yes | `open` \| `in_progress` \| `closed` |
-| `criteria` | tasks | acceptance criteria — written at filing, before any code |
-| `commit` | on close | the task's single commit sha |
-| `discovered-from` | discovered | the task whose run surfaced this |
-| `note` | no | one line of context |
+| `criteria` | tasks | acceptance criteria — pass/fail bars, written at filing, before any code |
+| `sha` | on close | the task's single commit sha — real and existing, never `"pending"` |
+| `discovered-from` | discovered | the task or sweep whose run surfaced this |
+| `evidence` | no | discovered tasks: the observation that motivated filing, verbatim — never mixed into `criteria` |
+| `audits` | epic close | sweep verdicts: `{"security":{"verdict","score"},"ui":{"verdict","score"}}`, or `"not_run: <reason>"` |
+| `note` | no | one line of context; `fix:` hypotheses live here, never in `criteria` |
 
-`criteria` are checkable against a diff. A task whose criteria can't fail
-isn't ready to file.
+`criteria` are checkable against a diff — bars, not findings. A pasted finding
+("X is broken because Y; fix: Z") is unadjudicable: the observation goes in
+`evidence`, the fix idea in `note`. A task whose criteria can't fail isn't
+ready to file.
+
+`type: note` records carry run evidence that is neither epic nor task — flake
+forensics, capacity headroom, a stop-condition diagnosis. Never dispatched,
+never in `deps`; still `open` at close → listed in the report.
 
 ## Ready
 
-Fold the file: latest record per id. A task is **ready** iff
-`status == "open"` and every id in `deps` folds to `closed`. Dispatch order:
-lowest `prio`, then file order. One task in flight at a time — `ready` feeds a
-sequential loop, not a fan-out; parallelism lives inside a task (two builders,
-one contract).
+Fold the file: merge per id, latest field wins. A task is **ready** iff
+`status == "open"` and every id in `deps` folds to `closed`. **The drain is
+scoped**: it dispatches planned tasks, plus discovered tasks only when they
+block an epic acceptance criterion. A discovery that blocks none is backlog —
+ready but never drained, open through close, listed in the report. Dispatch
+order: lowest `prio`, then file order. One task in flight at a time — `ready`
+feeds a sequential loop, not a fan-out; parallelism lives inside a task (two
+builders, one contract).
 
 ## Mutation — bounded, logged
 
@@ -74,11 +87,22 @@ tools, or models mid-run — org-graph changes are a redeploy.
 ## Discovered work
 
 Builders return `discovered[]` — one line per adjacent defect or opportunity
-they did **not** touch. The parent files each as a task record with
-`discovered-from` and criteria, in the same iteration it was reported.
-Filed, never worked in the iteration that found it. It competes on `prio` like
-any other task, and may reasonably outlive the epic unworked — the report
-lists what's left open.
+they did **not** touch; auditor findings on pre-existing, unchanged code land
+here too. The parent files each as a task record in the same iteration it was
+reported: `discovered-from`, the observation in `evidence`, `criteria` written
+as pass/fail bars, default `prio: 3`. Filed, never worked in the iteration
+that found it. Most discoveries are backlog (see Ready): they don't block an
+epic criterion, don't enter the drain, and reasonably outlive the epic
+unworked — the report lists what's left open.
+
+## Epic close — and after
+
+The epic `closed` record carries `commits[]`, `open[]` (the backlog left), and
+`audits` (§C2's sweep verdicts — `not_run: <reason>` keeps the epic out of
+Done). A close record silent on audits is not a close. A closed epic is not a
+tombstone: to work its backlog later, append an epic `open` record (reopen)
+first, then task records as usual, then re-close with updated
+`commits[]`/`open[]`/`audits`.
 
 ## Zone memory
 

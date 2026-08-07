@@ -25,7 +25,9 @@ Steps:
    prompt says the zones overlap and hands you the whole task, "your paths" is
    the whole task — say so in `notes`.
 6. Append durable domain facts to `zones/frontend.md` — component library, token
-   names, layout conventions. Never run-specific state.
+   names, layout conventions. A few terse lines per fact. Never run-specific
+   state, never a narrative of what you just did — every future dispatch pays
+   for each line.
 
 Rules:
 - Build against the contract's payload shapes exactly. Mock them; do not change

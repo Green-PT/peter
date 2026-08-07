@@ -29,12 +29,14 @@ verifier is a draft, and drafts are what this skill exists to prevent.
 
 **Resume check, before the gate.** If `<repo-root>/runs/<epic-id>/graph.jsonl`
 already exists for the goal in hand, this is a resumed epic, not a new one:
-**do not re-plan and do not rewrite `spec.md`.** Fold the graph (latest record
-per id), switch to `epic/<epic-id>`, assert a clean tree, append an `open`
-record — full payload — for anything left `in_progress` with a note that it was
-interrupted, and enter Phase B at step 1. Planning on top of a live graph
-duplicates tasks and orphans the commits already made. The gate below is for
-new work only.
+**do not re-plan and do not rewrite `spec.md`.** Fold the graph (merge per id,
+latest field wins), switch to `epic/<epic-id>`, assert a clean tree, append an
+`open` record for anything left `in_progress` with a note that it was
+interrupted, and enter Phase B at step 1. If every planned task already folds
+`closed` and only backlog remains, resume at Phase C instead — an epic drains
+in scope, then closes over its backlog; it does not grind the backlog first.
+Planning on top of a live graph duplicates tasks and orphans the commits
+already made. The gate below is for new work only.
 
 **Greenfield discovery, also before the gate — both modes.** Fires only when
 both hold: the project has no stack to read (no manifest, no source) **and** the
@@ -147,6 +149,11 @@ Emit `runs/<epic-id>/graph.jsonl`: one epic record plus task records with
   loop is sequential; parallelism lives *inside* a task (§B step 4).
 - Each task is completable in one dispatch: one deliverable, criteria checkable
   against a diff. If it isn't, split it.
+- A task that **changes a contract other zones already consume** is not
+  separable from its consumers. Slice it with the consumers it breaks
+  (`zone: both`, one builder), or land the contract change as its own leading
+  task — a seam that leaves a later task's tree red at commit time was drawn
+  wrong.
 
 ### A3. Branch
 
@@ -174,7 +181,9 @@ shape.
 While ready tasks exist and bounds hold:
 
 1. **Pick** the highest-priority ready task (`status: open`, every dep
-   `closed`).
+   `closed`) **in scope**: planned, or discovered-and-blocking an epic
+   acceptance criterion. Non-blocking discoveries are backlog — never
+   drained; the epic closes over them.
 2. **Assert clean working tree.** Dirty → stop and report; never paper over it.
 3. **Claim**: append `in_progress` to `graph.jsonl`.
 4. **Implement.** Trivial and single-zone → inline. Otherwise delegate, in
@@ -185,7 +194,8 @@ While ready tasks exist and bounds hold:
    - `frontend-builder` — everything that renders: UI, components, state,
      styling, and their tests
    Each prompt carries absolute paths, the contract, the task's `criteria[]`,
-   and its zone memory (`zones/<zone>.md`). Nodes inherit nothing.
+   and its zone memory (`zones/<zone>.md`) — pruned first if past ~a page;
+   every dispatch pays the file's length. Nodes inherit nothing.
    **Overlapping zones are single-writer.** When the zone map is not disjoint, a
    `zone: both` task goes to **one** builder owning the whole task. The fence is
    what makes a parallel pair safe, and a shared file has no fence — two builders
@@ -197,21 +207,33 @@ While ready tasks exist and bounds hold:
    `zone: both` task — routing a failure to its owner picks the *builder*, not
    the task.
 5. **Machine gates** (§G) — parent runs them. Failure → back to the owning
-   builder with the actual error text, not a summary.
+   builder with the actual error text, not a summary. **Attribute before you
+   loop back**: the owner of the failing artifact is not always the task in
+   flight. A failure living in files this task cannot write — another zone's
+   e2e spec, a stale fixture — is diagnosed with artifacts, then filed or
+   routed to its owner (a `note` record with the forensics; amend the owning
+   task's record), and burns no loopbacks here. The task in flight may still
+   close on its own criteria with the diagnosis in the graph and the suite
+   otherwise green. An undiagnosed recurring failure is never "flaky" — it is
+   a failing gate.
 6. **Conditional audits** (§A) — `security-auditor` only if the task touched
    auth, data, or external input; `ui-auditor` only if it rendered UI.
 7. **Adjudicate**: read `git diff` against the task's `criteria[]` — criteria
    written before the code, so this is not post-hoc rationalization.
 8. **Close or loop back.** All green and criteria met → one commit with the
-   task id in the message → **then** append `closed` carrying that sha. The
+   task id in the message → **then** append `closed` carrying that sha — a
+   real one from `git log`, never a placeholder — plus `audits` for any
+   per-task audit verdicts. The
    close record cannot live inside the commit it names; amending to fold it in
    changes the very sha it just recorded. Let it ride in a
    `graph: close <id> @ <sha>` commit or in the next task's. Otherwise loop back
    (max 2 per gate), then it's a stop condition.
 9. **File discovered work**: append new task records with `discovered-from`.
-   Builders return it in `discovered[]`; the parent files it. **Filed, never
-   worked in the same iteration** — that rule is what stops an autonomous run
-   from sprawling.
+   Builders return it in `discovered[]`; the parent files it — **bars, not
+   findings**: `criteria[]` pass/fail, the observation in `evidence`, any
+   `fix:` idea in `note` (§A: a fix is a hypothesis). Default `prio: 3`.
+   **Filed, never worked in the same iteration** — that rule is what stops an
+   autonomous run from sprawling.
 10. **Zone memory**: builders appended their own durable facts; the parent
     appends auditors' `zone_facts` to `zones/security.md` / `zones/ui.md`.
 11. **Route cross-zone contract changes now, not later.** A builder whose change
@@ -230,8 +252,14 @@ until done, ceiling, or a stop condition.
    footnote.
 2. Full audit sweep: `security-auditor` + `ui-auditor` over all changed routes,
    regardless of per-task audits. Both verdicts must be `pass` to close the
-   epic.
-3. Append `closed` for the epic; write `runs/<epic-id>/report.md`.
+   epic, and both land in the epic `closed` record as `audits` — or
+   `not_run: <reason>`, which keeps the epic out of Done. A close record
+   silent on audits is not a close.
+3. Append `closed` for the epic — carrying `commits[]`, `open[]` (the
+   backlog), and `audits` — then write `runs/<epic-id>/report.md`, including a
+   **Deviations** section: every departure from this protocol with its cause,
+   or `none`. A closed epic is reopened by appending an epic `open` record
+   before any further task work — never close tasks onto a closed epic.
 4. Prune any `zones/*.md` past ~a page.
 5. Print the **proposed** merge command, naming `runs/<epic-id>/` and `zones/`
    as part of what it carries across, so keeping or stripping the process
@@ -265,6 +293,12 @@ reported as `none`, not silently skipped and not invented.
 **A test that passes only on retry is a failing gate.** Never add retries,
 `sleep`, or loosened assertions to reach green — fix the race. Never delete a
 failing test to close the loop.
+
+**If the gate tooling itself goes down mid-run** — shell, runner, or spawn
+outage — do not keep drafting on top of an ungated tree: finish the task in
+flight to implementation-complete, dispatch nothing further until gates run
+again, and gate everything before any close. Commits the outage forced into a
+batch are a recorded deviation in `report.md`, never silent.
 
 ## §A. Audit gates — read-only, structured
 
@@ -354,8 +388,8 @@ both `pass`, no unresolved `critical`/`high`. Then report, in this order:
 2. Tasks closed (id → commit sha), tasks left open or discovered for later.
 3. Gate results — unit/typecheck/lint/build, E2E (passed/failed/skipped +
    acceptance-criteria coverage map), security verdict + score, UI verdict + score.
-4. What was deliberately not done, any quarantined test, and any accepted-risk
-   finding with its reason.
+4. What was deliberately not done, every protocol deviation with its cause,
+   any quarantined test, and any accepted-risk finding with its reason.
 5. The proposed merge command.
 
 **An audit that could not run keeps the build out of Done.** No dispatch
