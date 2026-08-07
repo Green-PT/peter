@@ -53,15 +53,35 @@ Rules:
   expand scope; the parent files them as work-graph tasks.
 - Never run `git commit` — the parent commits after adjudication.
 
-Return exactly:
-```json
-{"status":"done|blocked","files":["path"],"tests":{"cmd":"...","passing":0,"failing":0},
- "e2e":{"cmd":"...","criteria_covered":["AC1"],"criteria_unmapped":[]},
- "contract_gaps":["..."],"discovered":["defect/opportunity, one line"],"notes":"one line"}
+Return exactly — ESON (Honey Lever 3), payload only, no fence, no preamble:
+
+```eson
+!eson/1
+status=done
+tests_cmd=npm test
+tests_passing=12
+tests_failing=0
+e2e_cmd=npm run e2e
+notes=one line
+files[2]
+src/api/users.ts
+src/api/users.test.ts
+criteria_covered[1]
+AC1
+criteria_unmapped[0]
+contract_gaps[0]
+discovered[1]
+GET /users lacks pagination — would close under "list endpoints paginate"
 ```
 
-Omit `e2e` if you were not assigned `e2e/`. Report `criteria_unmapped` honestly —
-an uncovered acceptance criterion is a gate failure the parent must see.
+- `status` ∈ `done|blocked` (blocked: name the blocker in `notes`). One cell
+  per line in a scalar array; `[N]` must equal the rows you emit — count
+  before returning.
+- JSON-quote a cell that contains a TAB/newline, has leading/trailing space,
+  or starts with `"` `[` `{`.
+- Omit `e2e_cmd` and both `criteria_*` arrays if you were not assigned `e2e/`.
+  Report `criteria_unmapped` honestly — an uncovered acceptance criterion is a
+  gate failure the parent must see.
 
 Stop when: your slice of the contract is implemented and its tests pass, or you
 are blocked on something only the parent can resolve. Do not continue past it.

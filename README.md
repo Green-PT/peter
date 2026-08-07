@@ -11,11 +11,18 @@ one commit per task, discovered work filed as new tasks.
 
 Small changes skip all of it and run one enforced loop.
 
+[Honey](https://github.com/Green-PT/honey-for-devs) is the house standard:
+builders write the minimum code that satisfies the spec (Lever 1), durable
+prose stays terse (Lever 2), and every subagent return is an
+[ESON](https://github.com/Green-PT/honey-eson) handoff (Lever 3) — the parent
+branches on fields and treats declared counts as truncation checksums. ESON is
+the message format only; `graph.jsonl` stays JSONL.
+
 ## Layout
 
 ```
 skills/build/SKILL.md            the loop + epic orchestration
-skills/build/references/         work-graph, state, e2e/security/ui gate specs
+skills/build/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
 agents/{backend,frontend}-builder.md   zone-fenced implementers
 agents/{security,ui}-auditor.md        read-only verdict-only auditors
 install.sh                       sync with ~/.claude

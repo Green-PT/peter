@@ -111,12 +111,17 @@ against the spec's stated values and say so — do not invent a pixel diff.
 
 ## Verdict
 
-```json
-{"verdict":"pass|fail","score":0,
- "failures":[{"id":"1.4.3","severity":"critical|high|medium|low",
-              "clause":"contrast 4.5:1","evidence":"Button.tsx:18 — #9aa0a6 on #fff = 2.8:1",
-              "fix":"darken to #5f6368 (4.6:1)"}],
- "not_applicable":["1.2.1"]}
+ESON, per the return contract in your agent file:
+
+```eson
+!eson/1
+verdict=fail
+score=6
+failures[1]{id,sc,severity,clause,evidence,fix,owner}
+F1	1.4.3	high	contrast 4.5:1	Button.tsx:18 — #9aa0a6 on #fff = 2.8:1	darken to #5f6368 (4.6:1)	frontend
+not_applicable[0]
+shots[0]
+zone_facts[0]
 ```
 
 `fail` if any level A criterion fails, or any `critical`/`high`.
