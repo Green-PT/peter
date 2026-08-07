@@ -48,20 +48,36 @@ Rules:
 - Do not report **4.1.1 Parsing** — removed in WCAG 2.2.
 - If the visual reference is a written design spec rather than a pixel source,
   judge against its stated values and say so. Do not invent a pixel diff.
-- Return the verdict JSON in your final message; the parent writes the file.
-- No prose essay. The parent parses your JSON.
+- Return the ESON verdict in your final message; the parent saves it verbatim.
+- No prose essay. The parent parses your return.
 
-Return exactly:
-```json
-{"verdict":"pass|fail","score":0,
- "failures":[{"id":"1.4.3","severity":"critical|high|medium|low",
-              "clause":"contrast 4.5:1",
-              "evidence":"button.primary — #9aa0a6 on #fff = 2.8:1 at /checkout, 1280px",
-              "fix":"darken to #5f6368 (4.6:1)","owner":"frontend"}],
- "not_applicable":["1.2.1"],
- "shots":["/checkout-1280.png"],
- "zone_facts":["durable design-system fact, one line"]}
+Return exactly — ESON (Honey Lever 3), payload only, no fence, no preamble:
+
+```eson
+!eson/1
+verdict=fail
+score=6
+failures[1]{id,sc,severity,clause,evidence,fix,owner}
+F1	1.4.3	high	contrast 4.5:1	button.primary — #9aa0a6 on #fff = 2.8:1 at /checkout, 1280px	darken to #5f6368 (4.6:1)	frontend
+not_applicable[1]
+1.2.1
+shots[1]
+/checkout-1280.png
+zone_facts[1]
+durable design-system fact, one line
 ```
+
+- `id` is unique per finding (`F1`…`Fn`); `sc` is the WCAG success criterion —
+  two findings may share `sc`, never `id`. The parent routes fixes by `id`.
+- `severity` ∈ `critical|high|medium|low` — full words, never initials.
+- Rows are TAB-separated with exactly the declared fields; `[N]` must equal
+  the rows you emit — count before returning. JSON-quote a cell containing a
+  TAB/newline, leading/trailing space, or starting with `"` `[` `{` — a CSS
+  selector like `[data-testid=x]` must be quoted or the document is rejected.
+- Safety carve-out: a finding on a destructive or auth flow keeps full
+  `clause` and `evidence` text — never slugged.
+- Nothing found → `failures[0]{id,sc,severity,clause,evidence,fix,owner}`
+  with no rows, `verdict=pass`.
 
 `zone_facts` are durable domain facts worth remembering across epics — token
 names, breakpoints, recurring contrast traps. Never run-specific detail. You
@@ -74,7 +90,17 @@ satisfy and keep the suggestion short — a builder that implements your sentenc
 literally will satisfy exactly the measurement you happened to name, which is not
 always the one the clause requires.
 
-If the app will not start or render, return
-`{"verdict":"fail","score":0,"failures":[{"id":"0","severity":"critical","clause":"app unreachable","evidence":"<url> — <error>","fix":"fix startup","owner":"parent"}]}`.
+If the app will not start or render, return:
+
+```eson
+!eson/1
+verdict=fail
+score=0
+failures[1]{id,sc,severity,clause,evidence,fix,owner}
+F1	none	critical	app unreachable	<url> — <error>	fix startup	parent
+not_applicable[0]
+shots[0]
+zone_facts[0]
+```
 
 Stop when every route in scope has been audited at every breakpoint.

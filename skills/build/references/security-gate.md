@@ -89,11 +89,16 @@ Audit every clause. Report a finding only with file:line evidence — no
 
 ## Verdict
 
-```json
-{"verdict":"pass|fail","score":0,
- "failures":[{"id":"A05","severity":"critical|high|medium|low",
-              "clause":"parameterized queries","evidence":"api/users.ts:42 — template literal in query",
-              "fix":"use a parameterized query"}]}
+ESON, per the return contract in your agent file:
+
+```eson
+!eson/1
+verdict=fail
+score=6
+failures[1]{id,cat,severity,clause,evidence,fix,owner}
+F1	A05	high	parameterized queries	api/users.ts:42 — template literal in query	use a parameterized query	backend
+not_checked[0]
+zone_facts[0]
 ```
 
 `fail` if any `critical` or `high` exists. Report only what you can evidence.

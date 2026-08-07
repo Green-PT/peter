@@ -25,6 +25,21 @@ first draft. Nothing ships on "looks done" — it ships on parsed verdicts.
 **Never write implementation code before the bars exist.** A build with no
 verifier is a draft, and drafts are what this skill exists to prevent.
 
+## Honey — the house style
+
+[Honey](https://github.com/Green-PT/honey-for-devs) is standard in both modes:
+
+- **Lever 1 — minimum code.** The least code that satisfies the spec, stdlib
+  before dependency — already every builder's rule; named here as policy.
+- **Lever 2 — terse durable prose.** `spec.md` bullets, zone facts, graph
+  `note`s, `report.md`: dense, no narration. Every dispatch re-pays for every
+  line that survives.
+- **Lever 3 — ESON returns.** Every node return is ESON, not JSON, not prose
+  (`references/eson.md`). The parent branches on fields (`status=`,
+  `verdict=`) and treats declared counts as checksums. The boundary: ESON is
+  the message format, never the state format — `graph.jsonl` stays JSONL,
+  dispatch prompts stay plain text.
+
 ## 0. Gate — loop or epic?
 
 **Resume check, before the gate.** If `<repo-root>/runs/<epic-id>/graph.jsonl`
@@ -310,11 +325,15 @@ close: both, full scope. In loop mode: only if the change touches their scope.
 - `security-auditor` — OWASP Top 10:2025. Bar: `references/security-gate.md`
 - `ui-auditor` — WCAG 2.2 level AA + visual fidelity. Bar: `references/ui-gate.md`
 
-Neither has write tools, both return
-`{verdict, score, failures[{id, severity, clause, evidence, fix}]}`. The parent
-parses `verdict` and branches on the field. Never on prose. Their `Bash` is for
-read-only commands — the dependency audit, starting the app — a rule stated in
-the agent files, not something the tool list can enforce.
+Neither has write tools; both return an ESON verdict (`references/eson.md`):
+`verdict=` and `score=` scalars plus
+`failures[N]{id,cat,severity,clause,evidence,fix,owner}` — `sc` in place of
+`cat` for the UI auditor's WCAG criterion. The parent parses `verdict` and
+branches on the field, never on prose; checks every `[N]` against the rows
+received; and saves the return verbatim as `runs/<epic-id>/security.eson` /
+`ui.eson`. Their `Bash` is for read-only commands — the dependency audit,
+starting the app — a rule stated in the agent files, not something the tool
+list can enforce.
 
 Route each failure to the node that owns the file. Security findings at
 `severity: critical|high` block the build regardless of score.
@@ -419,7 +438,7 @@ per-epic and disposable; this is not (see
                    /      |        |       \
     backend-builder  frontend-builder  security-auditor(RO)  ui-auditor(RO)
           |               |                |                    |
-   non-UI code+tests  UI code+tests   security.json          ui.json
+   non-UI code+tests  UI code+tests   security.eson          ui.eson
           ^               ^                |                    |
           +---------------+----------------+--------------------+
                         failures[], max 2 loopbacks
