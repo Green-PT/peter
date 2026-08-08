@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- org star: parent node (lobster red, for steipete) fanning out to four specialists -->
+  <g stroke="#9a9a9a" stroke-width="2.5">
+    <line x1="32" y1="32" x2="12" y2="12"/>
+    <line x1="32" y1="32" x2="52" y2="12"/>
+    <line x1="32" y1="32" x2="12" y2="52"/>
+    <line x1="32" y1="32" x2="52" y2="52"/>
+  </g>
+  <circle cx="12" cy="12" r="7" fill="#9a9a9a"/>
+  <circle cx="52" cy="12" r="7" fill="#9a9a9a"/>
+  <circle cx="12" cy="52" r="7" fill="#9a9a9a"/>
+  <circle cx="52" cy="52" r="7" fill="#9a9a9a"/>
+  <circle cx="32" cy="32" r="10" fill="#d9442c"/>
+</svg>
