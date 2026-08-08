@@ -25,7 +25,9 @@ Steps:
    prompt says the zones overlap and hands you the whole task, "your paths" is
    the whole task — say so in `notes`.
 6. Append durable domain facts to `zones/frontend.md` — component library, token
-   names, layout conventions. Never run-specific state.
+   names, layout conventions. A few terse lines per fact. Never run-specific
+   state, never a narrative of what you just did — every future dispatch pays
+   for each line.
 
 Rules:
 - Build against the contract's payload shapes exactly. Mock them; do not change
@@ -49,18 +51,38 @@ Rules:
   expand scope; the parent files them as work-graph tasks.
 - Never run `git commit` — the parent commits after adjudication.
 
-Return exactly:
-```json
-{"status":"done|blocked","files":["path"],"tests":{"cmd":"...","passing":0,"failing":0},
- "e2e":{"cmd":"...","criteria_covered":["AC1"],"criteria_unmapped":[]},
- "routes":["/path"],"contract_gaps":["..."],"discovered":["defect/opportunity, one line"],
- "notes":"one line"}
+Return exactly — ESON (Honey Lever 3), payload only, no fence, no preamble:
+
+```eson
+!eson/1
+status=done
+tests_cmd=npm test
+tests_passing=12
+tests_failing=0
+e2e_cmd=npm run e2e
+notes=one line
+files[2]
+web/src/Checkout.tsx
+web/src/Checkout.test.tsx
+routes[1]
+/checkout
+criteria_covered[1]
+AC1
+criteria_unmapped[0]
+contract_gaps[0]
+discovered[1]
+empty-cart state unstyled — would close under "every state implemented"
 ```
 
-Report `criteria_unmapped` honestly — an acceptance criterion with no E2E test is
-a gate failure the parent must see, not something to paper over.
-
-List every route you built in `routes` — the UI auditor uses it as its scope.
+- `status` ∈ `done|blocked` (blocked: name the blocker in `notes`). One cell
+  per line in a scalar array; `[N]` must equal the rows you emit — count
+  before returning.
+- JSON-quote a cell that contains a TAB/newline, has leading/trailing space,
+  or starts with `"` `[` `{`.
+- Omit `e2e_cmd` and both `criteria_*` arrays if you were not assigned `e2e/`.
+  Report `criteria_unmapped` honestly — an acceptance criterion with no E2E
+  test is a gate failure the parent must see, not something to paper over.
+- List every route you built in `routes[]` — the UI auditor uses it as its scope.
 
 Stop when: your slice is implemented and its tests pass, or you are blocked on
 something only the parent can resolve. Do not grade the overall result.

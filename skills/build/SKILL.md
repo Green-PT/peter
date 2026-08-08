@@ -25,16 +25,35 @@ first draft. Nothing ships on "looks done" — it ships on parsed verdicts.
 **Never write implementation code before the bars exist.** A build with no
 verifier is a draft, and drafts are what this skill exists to prevent.
 
+## Honey — the house style
+
+[Honey](https://github.com/Green-PT/honey-for-devs) is standard in both modes:
+
+- **Lever 1 — minimum code.** The least code that satisfies the spec, stdlib
+  before dependency — already every builder's rule; named here as policy.
+- **Lever 2 — terse durable prose.** `spec.md` bullets, zone facts, graph
+  `note`s, `report.md`: dense, no narration. Every dispatch re-pays for every
+  line that survives.
+- **Lever 3 — ESON returns.** Every node return is ESON, not JSON, not prose
+  (`references/eson.md`). The parent branches on fields (`status=`,
+  `verdict=`) and treats declared counts as checksums. The boundary: ESON is
+  the message format, never the state format — `graph.jsonl` stays JSONL,
+  dispatch prompts stay plain text.
+
 ## 0. Gate — loop or epic?
 
 **Resume check, before the gate.** If `<repo-root>/runs/<epic-id>/graph.jsonl`
 already exists for the goal in hand, this is a resumed epic, not a new one:
-**do not re-plan and do not rewrite `spec.md`.** Fold the graph (latest record
-per id), switch to `epic/<epic-id>`, assert a clean tree, append an `open`
-record — full payload — for anything left `in_progress` with a note that it was
-interrupted, and enter Phase B at step 1. Planning on top of a live graph
-duplicates tasks and orphans the commits already made. The gate below is for
-new work only.
+**do not re-plan and do not rewrite `spec.md`.** Fold the graph (merge per id,
+latest field wins), switch to `epic/<epic-id>`, assert a clean tree, append an
+`open` record for anything left `in_progress` with a note that it was
+interrupted, and enter Phase B at step 1. `blocked` tasks stay blocked — name
+them in the first message with their `note`s — a `needs-input:` question is
+re-asked verbatim; re-opening one is the operator's move, never the resume's. If every planned task already folds
+`closed` and only backlog remains, resume at Phase C instead — an epic drains
+in scope, then closes over its backlog; it does not grind the backlog first.
+Planning on top of a live graph duplicates tasks and orphans the commits
+already made. The gate below is for new work only.
 
 **Greenfield discovery, also before the gate — both modes.** Fires only when
 both hold: the project has no stack to read (no manifest, no source) **and** the
@@ -63,7 +82,9 @@ Now the gate. Run `decompose` and score its seven signals. Most tasks are a loop
   config, the Makefile — and a gate with no command there is reported `none`,
   never invented; the §G baseline still applies, captured before the first edit;
   and **commit only if the user asked**, branching first if they did and you are
-  on the default branch. Loop mode never creates an `epic/` branch.
+  on the default branch. Loop mode never creates an `epic/` branch. One line at
+  each phase entry — `Step 2/4 — implement; next: machine gates` — counting only
+  the phases this build gets, naming an auditor while one runs.
 - **Epic (score 5–7)** — full-stack or multi-task work, parallel builders,
   read-only auditors, context that won't fit one window. Run Phases A–C.
 
@@ -147,6 +168,11 @@ Emit `runs/<epic-id>/graph.jsonl`: one epic record plus task records with
   loop is sequential; parallelism lives *inside* a task (§B step 4).
 - Each task is completable in one dispatch: one deliverable, criteria checkable
   against a diff. If it isn't, split it.
+- A task that **changes a contract other zones already consume** is not
+  separable from its consumers. Slice it with the consumers it breaks
+  (`zone: both`, one builder), or land the contract change as its own leading
+  task — a seam that leaves a later task's tree red at commit time was drawn
+  wrong.
 
 ### A3. Branch
 
@@ -165,18 +191,22 @@ Unmapped criteria fail the gate.
 
 Commit `spec.md` + `graph.jsonl` on the epic branch (`<epic-id>: plan`) before
 the first dispatch — Phase B step 2 asserts a clean tree, and the plan must be
-in the record before code exists. E2E flows in a dedicated final task (owned by
-the `e2e/` owner), with unit/component bars per earlier task, is the intended
-shape.
+in the record before code exists. Then print the plan's status table (§S) —
+the operator's first sight of the run's shape. E2E flows in a dedicated final
+task (owned by the `e2e/` owner), with unit/component bars per earlier task, is
+the intended shape.
 
 ## Phase B — Dispatch loop
 
 While ready tasks exist and bounds hold:
 
 1. **Pick** the highest-priority ready task (`status: open`, every dep
-   `closed`).
+   `closed`) **in scope**: planned, or discovered-and-blocking an epic
+   acceptance criterion. Non-blocking discoveries are backlog — never
+   drained; the epic closes over them.
 2. **Assert clean working tree.** Dirty → stop and report; never paper over it.
-3. **Claim**: append `in_progress` to `graph.jsonl`.
+3. **Claim**: append `in_progress` to `graph.jsonl`; print the status table
+   (§S), naming who is about to run.
 4. **Implement.** Trivial and single-zone → inline. Otherwise delegate, in
    parallel where the task spans zones **and the zone map says the globs are
    disjoint**, contract already fixed in `spec.md`:
@@ -185,7 +215,8 @@ While ready tasks exist and bounds hold:
    - `frontend-builder` — everything that renders: UI, components, state,
      styling, and their tests
    Each prompt carries absolute paths, the contract, the task's `criteria[]`,
-   and its zone memory (`zones/<zone>.md`). Nodes inherit nothing.
+   and its zone memory (`zones/<zone>.md`) — pruned first if past ~a page;
+   every dispatch pays the file's length. Nodes inherit nothing.
    **Overlapping zones are single-writer.** When the zone map is not disjoint, a
    `zone: both` task goes to **one** builder owning the whole task. The fence is
    what makes a parallel pair safe, and a shared file has no fence — two builders
@@ -197,21 +228,34 @@ While ready tasks exist and bounds hold:
    `zone: both` task — routing a failure to its owner picks the *builder*, not
    the task.
 5. **Machine gates** (§G) — parent runs them. Failure → back to the owning
-   builder with the actual error text, not a summary.
+   builder with the actual error text, not a summary. **Attribute before you
+   loop back**: the owner of the failing artifact is not always the task in
+   flight. A failure living in files this task cannot write — another zone's
+   e2e spec, a stale fixture — is diagnosed with artifacts, then filed or
+   routed to its owner (a `note` record with the forensics; amend the owning
+   task's record), and burns no loopbacks here. The task in flight may still
+   close on its own criteria with the diagnosis in the graph and the suite
+   otherwise green. An undiagnosed recurring failure is never "flaky" — it is
+   a failing gate.
 6. **Conditional audits** (§A) — `security-auditor` only if the task touched
    auth, data, or external input; `ui-auditor` only if it rendered UI.
 7. **Adjudicate**: read `git diff` against the task's `criteria[]` — criteria
    written before the code, so this is not post-hoc rationalization.
 8. **Close or loop back.** All green and criteria met → one commit with the
-   task id in the message → **then** append `closed` carrying that sha. The
+   task id in the message → **then** append `closed` carrying that sha — a
+   real one from `git log`, never a placeholder — plus `audits` for any
+   per-task audit verdicts. The
    close record cannot live inside the commit it names; amending to fold it in
    changes the very sha it just recorded. Let it ride in a
-   `graph: close <id> @ <sha>` commit or in the next task's. Otherwise loop back
+   `graph: close <id> @ <sha>` commit or in the next task's. Print the close
+   line (§S). Otherwise loop back
    (max 2 per gate), then it's a stop condition.
 9. **File discovered work**: append new task records with `discovered-from`.
-   Builders return it in `discovered[]`; the parent files it. **Filed, never
-   worked in the same iteration** — that rule is what stops an autonomous run
-   from sprawling.
+   Builders return it in `discovered[]`; the parent files it — **bars, not
+   findings**: `criteria[]` pass/fail, the observation in `evidence`, any
+   `fix:` idea in `note` (§A: a fix is a hypothesis). Default `prio: 3`.
+   **Filed, never worked in the same iteration** — that rule is what stops an
+   autonomous run from sprawling.
 10. **Zone memory**: builders appended their own durable facts; the parent
     appends auditors' `zone_facts` to `zones/security.md` / `zones/ui.md`.
 11. **Route cross-zone contract changes now, not later.** A builder whose change
@@ -221,8 +265,10 @@ While ready tasks exist and bounds hold:
     a builder from repairing what it broke on the other side of the fence, so an
     unrouted contract change is silent breakage, not isolation.
 
-Then loop to 1. Between tasks there is no check-in — the epic runs unattended
-until done, ceiling, or a stop condition.
+Then loop to 1. Between tasks there is no check-in — the epic waits on no
+reply until done, ceiling, or a stop condition. Unattended, not silent: the
+status table (§S) prints at every claim, each close emits its one-liner, and
+neither ever pauses the run.
 
 ## Phase C — Epic close
 
@@ -230,8 +276,14 @@ until done, ceiling, or a stop condition.
    footnote.
 2. Full audit sweep: `security-auditor` + `ui-auditor` over all changed routes,
    regardless of per-task audits. Both verdicts must be `pass` to close the
-   epic.
-3. Append `closed` for the epic; write `runs/<epic-id>/report.md`.
+   epic, and both land in the epic `closed` record as `audits` — or
+   `not_run: <reason>`, which keeps the epic out of Done. A close record
+   silent on audits is not a close.
+3. Append `closed` for the epic — carrying `commits[]`, `open[]` (the
+   backlog), and `audits` — then write `runs/<epic-id>/report.md`, including a
+   **Deviations** section: every departure from this protocol with its cause,
+   or `none`. A closed epic is reopened by appending an epic `open` record
+   before any further task work — never close tasks onto a closed epic.
 4. Prune any `zones/*.md` past ~a page.
 5. Print the **proposed** merge command, naming `runs/<epic-id>/` and `zones/`
    as part of what it carries across, so keeping or stripping the process
@@ -266,6 +318,12 @@ reported as `none`, not silently skipped and not invented.
 `sleep`, or loosened assertions to reach green — fix the race. Never delete a
 failing test to close the loop.
 
+**If the gate tooling itself goes down mid-run** — shell, runner, or spawn
+outage — do not keep drafting on top of an ungated tree: finish the task in
+flight to implementation-complete, dispatch nothing further until gates run
+again, and gate everything before any close. Commits the outage forced into a
+batch are a recorded deviation in `report.md`, never silent.
+
 ## §A. Audit gates — read-only, structured
 
 Only once machine gates are green. Per task: conditional (§B step 6). At epic
@@ -274,11 +332,15 @@ close: both, full scope. In loop mode: only if the change touches their scope.
 - `security-auditor` — OWASP Top 10:2025. Bar: `references/security-gate.md`
 - `ui-auditor` — WCAG 2.2 level AA + visual fidelity. Bar: `references/ui-gate.md`
 
-Neither has write tools, both return
-`{verdict, score, failures[{id, severity, clause, evidence, fix}]}`. The parent
-parses `verdict` and branches on the field. Never on prose. Their `Bash` is for
-read-only commands — the dependency audit, starting the app — a rule stated in
-the agent files, not something the tool list can enforce.
+Neither has write tools; both return an ESON verdict (`references/eson.md`):
+`verdict=` and `score=` scalars plus
+`failures[N]{id,cat,severity,clause,evidence,fix,owner}` — `sc` in place of
+`cat` for the UI auditor's WCAG criterion. The parent parses `verdict` and
+branches on the field, never on prose; checks every `[N]` against the rows
+received; and saves the return verbatim as `runs/<epic-id>/security.eson` /
+`ui.eson`. Their `Bash` is for read-only commands — the dependency audit,
+starting the app — a rule stated in the agent files, not something the tool
+list can enforce.
 
 Route each failure to the node that owns the file. Security findings at
 `severity: critical|high` block the build regardless of score.
@@ -316,6 +378,36 @@ Auditors are the one role the parent may never fill itself. Machine gates and
 even implementation can be inlined when delegation is unavailable; a verdict from
 the author of the code is a different, weaker bar. Report it as not run.
 
+## §S. Status table — broadcast, never a question
+
+Autonomous is not silent. The table derives from the folded graph plus the
+dispatch in flight — never a new file — and prints at the plan commit (A5),
+each claim (naming who is about to run), every stop, and Done. Each close
+emits one line instead: `T3 done @ a1b2c3d — 3/5; next: T4`. The shape,
+exactly:
+
+```
+**E-checkout** on `epic/E-checkout` — 2/5 done · backlog 1
+
+| Task | Status |
+|---|---|
+| T1 cart API | done a1b2c3d |
+| T2 cart UI | done e4f5a6b |
+| T3 checkout API | running — backend-builder, then security audit |
+| T4 checkout UI | next |
+| T5 e2e flows | open — waits on T3, T4 |
+
+Now: T3 checkout API. Next: T4 checkout UI.
+```
+
+Statuses, exactly these: `done <sha>` · `running — <agents, or inline>` ·
+`next` — the drain's next pick · `open — waits on <deps>` · `blocked — <note>`,
+the note keeping its `gates:`/`needs-input:` prefix. Rows are in-scope tasks
+in file order; backlog is the header count, never rows; blocked rows always
+show. The Now/Next line ends every table. Print and move on — a table never
+waits for a reply. Only at a stop does it arrive with the failing clauses or
+the open question and **what the operator must do to continue** — then halt.
+
 ## Bounds
 
 - One task in flight at a time.
@@ -328,11 +420,14 @@ the author of the code is a different, weaker bar. Report it as not run.
 
 ## Stop conditions — halt, dispatch nothing further, report
 
-- A task fails its gates twice (after the 2 loopbacks). Leave it `open` with
-  notes on what's wrong; do not force a third pass.
+- A task fails its gates twice (after the 2 loopbacks). Append `blocked`,
+  `note` `gates: <the failing clauses>`; do not force a third pass. Only an
+  operator-appended `open` record re-enters it — resume never does.
 - Any full-suite regression.
 - A decision needs operator input: spec ambiguity, scope change, unsettled
-  UX/semantics.
+  UX/semantics. Append `blocked` on the task in flight, `note`
+  `needs-input: <the question>` — durable, so resume re-surfaces it; no task
+  in flight → a `note` record carrying the question.
 - Anything requiring a push, a config change, or files outside the project.
 - Two consecutive infrastructure/API errors.
 - The work needs a 5th specialty — a **tool or model none of the four roles has**
@@ -340,8 +435,8 @@ the author of the code is a different, weaker bar. Report it as not run.
   not a 5th specialty: CLIs, libraries, data pipelines, and infra scripts are
   `backend-builder`'s. Re-run the `decompose` gate; never invent a node mid-run.
 
-On any stop: report tasks closed, commits made, tasks filed, and the exact
-failing clauses. **A failed gate reported honestly beats a passed gate that was
+On any stop: the status table (§S), then the exact failing clauses or the
+open question — closed, filed, and blocked all read off the table. **A failed gate reported honestly beats a passed gate that was
 downgraded to make it pass.** Never relax a bar to close the loop; never mark
 `pass` on a verdict the auditor didn't give.
 
@@ -351,11 +446,11 @@ Ship only when: machine gates green including E2E, epic-close audit verdicts
 both `pass`, no unresolved `critical`/`high`. Then report, in this order:
 
 1. What was built, in two sentences.
-2. Tasks closed (id → commit sha), tasks left open or discovered for later.
+2. The final status table (§S) — every task's end state.
 3. Gate results — unit/typecheck/lint/build, E2E (passed/failed/skipped +
    acceptance-criteria coverage map), security verdict + score, UI verdict + score.
-4. What was deliberately not done, any quarantined test, and any accepted-risk
-   finding with its reason.
+4. What was deliberately not done, every protocol deviation with its cause,
+   any quarantined test, and any accepted-risk finding with its reason.
 5. The proposed merge command.
 
 **An audit that could not run keeps the build out of Done.** No dispatch
@@ -381,7 +476,7 @@ per-epic and disposable; this is not (see
                    /      |        |       \
     backend-builder  frontend-builder  security-auditor(RO)  ui-auditor(RO)
           |               |                |                    |
-   non-UI code+tests  UI code+tests   security.json          ui.json
+   non-UI code+tests  UI code+tests   security.eson          ui.eson
           ^               ^                |                    |
           +---------------+----------------+--------------------+
                         failures[], max 2 loopbacks

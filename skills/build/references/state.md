@@ -12,8 +12,8 @@ Both directories sit at the **repo root** — `<repo-root>/runs/` and
 <repo-root>/runs/<epic-id>/
   spec.md            # epic-level bars, API contract, visual reference — parent writes once
   graph.jsonl        # append-only work graph — schema in work-graph.md
-  security.json      # security-auditor verdict (latest; prior verdicts in git history)
-  ui.json            # ui-auditor verdict (latest)
+  security.eson      # security-auditor's ESON return, saved verbatim (latest; prior in git history)
+  ui.eson            # ui-auditor's ESON return, saved verbatim (latest)
   shots/             # ui-auditor screenshots, <route>-<width>.png
   report.md          # final summary — parent only, only after the epic closes
 ```
@@ -41,8 +41,8 @@ debuggable and **resumable** after the subagent contexts are gone: fold
 | repo backend paths | backend-builder | all |
 | repo frontend paths | frontend-builder | all |
 | `e2e/` | the builder named in `spec.md` (UI → frontend, API-only → backend) | all |
-| `security.json` | parent, from security-auditor's return | parent |
-| `ui.json`, `shots/` | parent, from ui-auditor's return | parent |
+| `security.eson` | parent, from security-auditor's return | parent |
+| `ui.eson`, `shots/` | parent, from ui-auditor's return | parent |
 | `report.md` | parent | — |
 | `zones/backend.md`, `zones/frontend.md` | the owning builder | that node, parent |
 | `zones/security.md`, `zones/ui.md` | parent, from auditor `zone_facts` | that auditor, parent |
@@ -66,7 +66,8 @@ and never edits. See `e2e-gate.md`.
 
 Builders never run `git commit` — the parent commits after adjudication, task
 id in the message. Auditors have **no write tools**: they return their verdict
-as JSON in the final message and the parent writes the file. Their `Bash` is for
+as ESON in the final message (`eson.md`) and the parent saves it verbatim —
+never hand-transcoded; transcription is where fields drift. Their `Bash` is for
 read-only commands — a dependency audit, starting the app — never file writes,
 never git mutations. That last part is convention, not an allowlist: `Bash` can
 write, so the rule lives in the agent files and holds because they follow it.
@@ -81,8 +82,10 @@ state:
   auditors' `zone_facts` return field.
 
 Durable domain facts only — the stack's conventions, where auth lives, which
-component library, recurring gotchas, the threat model. Never run-specific
-state. The parent prunes each past ~a page.
+component library, recurring gotchas, the threat model. A few terse lines per
+fact; never run-specific state, never a narrative of what a builder just did.
+The parent prunes each past ~a page **before it rides in a dispatch prompt**,
+not only at epic close — every dispatch pays the file's length.
 
 ## Handoff
 
@@ -95,13 +98,13 @@ reads nothing and reasons from the prompt text alone:
 > `/Users/me/proj/zones/backend.md`. Task T2, criteria: ["429 responses carry
 > Retry-After and X-RateLimit-* headers"]. Implement §3.2 of the contract. Write
 > only under `/Users/me/proj/api/`. E2E may bind ports 4000-4009; 4100-4109 are
-> the auditor's. Return the JSON contract from your agent file. Stop when your
+> the auditor's. Return the ESON contract from your agent file. Stop when your
 > tests for T2 pass; do not touch `/Users/me/proj/web/`, do not commit.
 
 ## Failure isolation
 
 A failed node leaves its output absent, not half-written. Auditors return their
-verdict in the final message and let the parent write the JSON — one round
+verdict in the final message and let the parent write the file — one round
 trip, no partial files that a later `pass` check might misread. A task that
 stops mid-flight leaves its last `graph.jsonl` record `in_progress`; the resume
 check in §0 of `SKILL.md` folds the file, reopens that record, and re-dispatches
