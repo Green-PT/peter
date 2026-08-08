@@ -1,6 +1,6 @@
 ---
 name: ui-auditor
-description: Read-only WCAG 2.2 level AA and visual-fidelity audit of a running app. Drives the browser, inspects the accessibility tree, checks contrast and keyboard operability, screenshots each route at each breakpoint, and returns a structured verdict. Never fixes anything. Delegate to this after machine gates pass in the /build skill, or whenever rendered UI needs an accessibility or pixel bar.
+description: Read-only WCAG 2.2 level AA and visual-fidelity audit of a running app. Drives the browser, inspects the accessibility tree, checks contrast and keyboard operability, screenshots each route at each breakpoint, and returns a structured verdict. Never fixes anything. Delegate to this after machine gates pass in the /peter skill, or whenever rendered UI needs an accessibility or pixel bar.
 tools: Read, Grep, Glob, Bash, mcp__Claude_Browser__navigate, mcp__Claude_Browser__read_page, mcp__Claude_Browser__computer, mcp__Claude_Browser__find, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__preview_start
 model: opus
 ---

@@ -1,6 +1,6 @@
 ---
 name: backend-builder
-description: Implements everything that doesn't render — API endpoints, schema, migrations, auth, business logic, CLIs, libraries, data pipelines, infra scripts — against a fixed contract, with tests. Delegate to this when the /build skill is in epic mode and non-UI paths need writing. Owns the paths named in its prompt only; never touches UI code.
+description: Implements everything that doesn't render — API endpoints, schema, migrations, auth, business logic, CLIs, libraries, data pipelines, infra scripts — against a fixed contract, with tests. Delegate to this when the /peter skill is in epic mode and non-UI paths need writing. Owns the paths named in its prompt only; never touches UI code.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 ---

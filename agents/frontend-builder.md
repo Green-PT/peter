@@ -1,6 +1,6 @@
 ---
 name: frontend-builder
-description: Implements everything that renders — components, layout, state, styling — against a fixed API contract and visual reference, with tests. Delegate to this when the /build skill is in epic mode and UI paths need writing. Owns the paths named in its prompt only; never touches non-UI code.
+description: Implements everything that renders — components, layout, state, styling — against a fixed API contract and visual reference, with tests. Delegate to this when the /peter skill is in epic mode and UI paths need writing. Owns the paths named in its prompt only; never touches non-UI code.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 ---

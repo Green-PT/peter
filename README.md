@@ -3,7 +3,7 @@
 # peter
 
 **Autonomous epic builds for Claude Code — graph engineering with the bars
-built in.** Describe a goal; `/build` turns it into a persistent work graph and
+built in.** Describe a goal; `/peter` turns it into a persistent work graph and
 drains it unattended: every task through real machine gates and read-only
 security and accessibility audits, one commit per task, until the epic closes
 or a stop condition hands control back. Not a framework, not a runtime — a
@@ -11,7 +11,7 @@ skill, four agent files, and a JSONL contract. The parent session is the
 runtime.
 
 Free and open source, [MIT-licensed](LICENSE). Concretely: the Claude Code
-`/build` skill with autonomous **epic mode**, plus the four specialist
+`/peter` skill with autonomous **epic mode**, plus the four specialist
 subagents it dispatches.
 
 Big goals are decomposed into a persistent work graph
@@ -32,8 +32,8 @@ the message format only; `graph.jsonl` stays JSONL.
 ## Layout
 
 ```
-skills/build/SKILL.md            the loop + epic orchestration
-skills/build/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
+skills/peter/SKILL.md            the loop + epic orchestration
+skills/peter/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
 agents/{backend,frontend}-builder.md   zone-fenced implementers
 agents/{security,ui}-auditor.md        read-only verdict-only auditors
 install.sh                       sync with ~/.claude

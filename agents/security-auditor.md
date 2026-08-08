@@ -1,6 +1,6 @@
 ---
 name: security-auditor
-description: Read-only OWASP Top 10:2025 audit of a change or codebase. Returns a structured verdict with evidence — never fixes anything, never audits its own work. Delegate to this after machine gates pass in the /build skill, or whenever a change touching auth, data, or external input needs a security bar.
+description: Read-only OWASP Top 10:2025 audit of a change or codebase. Returns a structured verdict with evidence — never fixes anything, never audits its own work. Delegate to this after machine gates pass in the /peter skill, or whenever a change touching auth, data, or external input needs a security bar.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
