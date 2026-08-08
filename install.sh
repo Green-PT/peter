@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sync the tracked /build skill and its agents with ~/.claude.
+# Sync the tracked /peter skill and its agents with ~/.claude.
 #
 #   ./install.sh            repo -> ~/.claude   (default)
 #   ./install.sh pull       ~/.claude -> repo
@@ -14,19 +14,19 @@ dest="${CLAUDE_HOME:-$HOME/.claude}"
 case "${1:-install}" in
 install)
 	mkdir -p "$dest/skills" "$dest/agents"
-	rm -rf "${dest:?}/skills/build"
-	cp -R "$repo/skills/build" "$dest/skills/build"
+	rm -rf "${dest:?}/skills/peter"
+	cp -R "$repo/skills/peter" "$dest/skills/peter"
 	cp "$repo"/agents/*.md "$dest/agents/"
 	echo "installed -> $dest"
 	;;
 pull)
-	rm -rf "${repo:?}/skills/build"
-	cp -R "$dest/skills/build" "$repo/skills/build"
+	rm -rf "${repo:?}/skills/peter"
+	cp -R "$dest/skills/peter" "$repo/skills/peter"
 	cp "$dest"/agents/{backend-builder,frontend-builder,security-auditor,ui-auditor}.md "$repo/agents/"
 	echo "pulled <- $dest"
 	;;
 check)
-	diff -r "$repo/skills/build" "$dest/skills/build"
+	diff -r "$repo/skills/peter" "$dest/skills/peter"
 	for f in "$repo"/agents/*.md; do
 		diff "$f" "$dest/agents/$(basename "$f")"
 	done

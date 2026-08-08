@@ -1,6 +1,6 @@
 # honey-graph-engineering
 
-Claude Code `/build` skill with autonomous **epic mode**, plus the four specialist
+Claude Code `/peter` skill with autonomous **epic mode**, plus the four specialist
 subagents it dispatches.
 
 Big goals are decomposed into a persistent work graph
@@ -21,8 +21,8 @@ the message format only; `graph.jsonl` stays JSONL.
 ## Layout
 
 ```
-skills/build/SKILL.md            the loop + epic orchestration
-skills/build/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
+skills/peter/SKILL.md            the loop + epic orchestration
+skills/peter/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
 agents/{backend,frontend}-builder.md   zone-fenced implementers
 agents/{security,ui}-auditor.md        read-only verdict-only auditors
 install.sh                       sync with ~/.claude
