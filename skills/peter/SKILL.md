@@ -49,8 +49,10 @@ latest field wins), switch to `epic/<epic-id>`, assert a clean tree, append an
 `open` record for anything left `in_progress` with a note that it was
 interrupted, and enter Phase B at step 1. `blocked` tasks stay blocked — name
 them in the first message with their `note`s — a `needs-input:` question is
-re-asked verbatim; re-opening one is the operator's move, never the resume's. If every planned task already folds
-`closed` and only backlog remains, resume at Phase C instead — an epic drains
+re-asked verbatim; re-opening one is the operator's move, never the resume's.
+**An answer to that question is that move**: record it in a `note`, append
+`open`, and continue in the same turn — the operator says the word, not a graph
+edit. If every planned task already folds `closed` and only backlog remains, resume at Phase C instead — an epic drains
 in scope, then closes over its backlog; it does not grind the backlog first.
 Planning on top of a live graph duplicates tasks and orphans the commits
 already made. The gate below is for new work only.
@@ -101,6 +103,12 @@ infrastructure/API errors" stop condition only fires after a task is claimed and
 its builders are burned. If the probe fails, say so and offer the degraded run —
 parent does Phase A and the machine gates inline — instead of discovering it
 mid-drain. Audits are never part of a degraded run; see §A.
+
+The probe proves dispatch *works*; it does not buy approval for the ones that
+follow. In the same message, say how many dispatches the run will make and that
+each may prompt for approval — approving for the session is what keeps the drain
+unattended. A run the operator must babysit prompt-by-prompt is not the mode
+they were sold.
 
 ## Phase A — Plan (parent only, before any code)
 
@@ -408,6 +416,12 @@ show. The Now/Next line ends every table. Print and move on — a table never
 waits for a reply. Only at a stop does it arrive with the failing clauses or
 the open question and **what the operator must do to continue** — then halt.
 
+**A stop is announced in the turn it happens**, before anything else and without
+being asked. A run that halts and says nothing reads exactly like a run still
+working; the operator finds out by asking "how far are we?" — after the run has
+been dead for half an hour. Silence is the failure mode this table exists to
+prevent.
+
 ## Bounds
 
 - One task in flight at a time.
@@ -430,6 +444,12 @@ the open question and **what the operator must do to continue** — then halt.
   in flight → a `note` record carrying the question.
 - Anything requiring a push, a config change, or files outside the project.
 - Two consecutive infrastructure/API errors.
+- **A dispatch is rejected or interrupted by the operator.** One is enough — a
+  denial is a decision, not an error, and re-sending the same prompt re-asks a
+  question already answered. Never auto-retry, and never quietly inline the work
+  instead. Append `blocked` on the task in flight, `note` `needs-input: dispatch
+  rejected — <agent> for <id>; approve and say resume, or say degrade to run it
+  inline (no audits, stays out of Done)`, and surface it in that same turn.
 - The work needs a 5th specialty — a **tool or model none of the four roles has**
   (mobile simulator, notebook runtime, a different provider). A non-web domain is
   not a 5th specialty: CLIs, libraries, data pipelines, and infra scripts are
