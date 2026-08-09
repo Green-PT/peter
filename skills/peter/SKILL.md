@@ -1,5 +1,5 @@
 ---
-name: build
+name: peter
 description: >-
   Build a production-ready feature, app, or multi-task goal from a short
   description. Small changes run one enforced loop: spec and pass/fail bars

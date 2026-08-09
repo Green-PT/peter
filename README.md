@@ -1,68 +1,151 @@
-<p align="center"><img src="assets/icon.svg" width="72" alt="a star work graph: one red parent node, four specialist nodes"></p>
+<p align="center">
+  <img src="assets/peter.png" width="220" alt="Peter, the builder — ink portrait">
+</p>
 
-# peter
+<h1 align="center">Peter</h1>
 
-**Autonomous epic builds for Claude Code — graph engineering with the bars
-built in.** Describe a goal; `/build` turns it into a persistent work graph and
-drains it unattended: every task through real machine gates and read-only
-security and accessibility audits, one commit per task, until the epic closes
-or a stop condition hands control back. Not a framework, not a runtime — a
-skill, four agent files, and a JSONL contract. The parent session is the
-runtime.
+<p align="center">
+  <em>You describe it. He graphs it. He ships it.</em>
+</p>
 
-Free and open source, [MIT-licensed](LICENSE). Concretely: the Claude Code
-`/build` skill with autonomous **epic mode**, plus the four specialist
-subagents it dispatches.
+<p align="center">
+  <img src="https://img.shields.io/github/stars/Green-PT/peter?style=flat-square&color=111111&label=stars" alt="Stars">
+  <img src="https://img.shields.io/badge/runtime-Claude%20Code-111111?style=flat-square" alt="Runtime: Claude Code">
+  <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT license">
+</p>
 
-Big goals are decomposed into a persistent work graph
-(`runs/<epic-id>/graph.jsonl`, append-only) and drained on an `epic/<id>` branch —
-one task at a time through the same machine gates (unit, typecheck, lint, build,
-e2e against a real server and database), then read-only security and UI audits,
-one commit per task, discovered work filed as new tasks.
+<p align="center">
+  <strong>One goal in &middot; one gated commit per task &middot; zero babysitting</strong><br>
+  <sub>Autonomous epic builds for Claude Code — graph engineering with the bars built in.
+  Not a framework, not a runtime: a skill, four agent files, and a JSONL contract.
+  The parent session is the runtime.</sub>
+</p>
 
-Small changes skip all of it and run one enforced loop.
+---
 
-[Honey](https://github.com/Green-PT/honey-for-devs) is the house standard:
-builders write the minimum code that satisfies the spec (Lever 1), durable
-prose stays terse (Lever 2), and every subagent return is an
-[ESON](https://github.com/Green-PT/honey-eson) handoff (Lever 3) — the parent
-branches on fields and treats declared counts as truncation checksums. ESON is
-the message format only; `graph.jsonl` stays JSONL.
+You know him. You describe a feature at nine; by noon there's a branch with a
+commit per task, each one green. He doesn't ask whether you want tests. There
+are tests. There's an OWASP pass. The contrast ratios check out.
+
+Peter puts him inside Claude Code.
+
+## Before / after
+
+You ask for a checkout flow. Your agent writes 800 lines, says "All done! 🎉",
+and the first click 500s. No tests, no migrations, `main` is broken.
+
+With peter:
+
+```
+> /peter checkout flow with Stripe test mode
+
+epic/checkout-flow · 9 tasks · draining unattended
+
+$ git log --oneline epic/checkout-flow
+f3a91c2 task-9: e2e — happy path + declined card
+8d02b4e task-8: checkout UI against the fixed API contract
+…                 every commit: gates green, audits pass
+```
+
+## How it works
+
+Every task — loop or epic — goes through the same enforced sequence. No
+implementation code before the bars exist:
+
+```
+1. Spec + pass/fail bars   → written first, or nothing gets built
+2. Implement               → the minimum that meets the bars
+3. Machine gates           → unit, typecheck, lint, build, e2e
+                             (real server, real database — no mocks)
+4. Security audit          → OWASP Top 10:2025, read-only verdict
+5. UI audit                → WCAG 2.2 AA + visual fidelity, read-only verdict
+6. Loop until green        → then exactly one commit
+```
+
+Small changes run that loop once and stop.
+
+Big goals become an **epic**: the goal is decomposed into a persistent work
+graph (`runs/<epic-id>/graph.jsonl`, append-only) of dependency-ordered tasks,
+then drained on a dedicated `epic/<id>` branch — one task at a time through the
+gates above, one commit per task, discovered work filed as new tasks instead of
+scope-creeping the current one, until the epic closes or a stop condition hands
+control back.
+
+Implementation is zone-fenced across two builders: `backend-builder` owns
+everything that doesn't render (API, CLI, library, pipeline, infra),
+`frontend-builder` owns everything that does. The write fence is what makes a
+parallel pair safe — a shared file has no fence, so co-located code goes to one
+builder. The two auditors never write; they return verdicts.
+
+## Install
+
+The most effort peter will ever ask of you:
+
+```bash
+git clone https://github.com/Green-PT/peter && cd peter && ./install.sh
+```
+
+That's it. `~/.claude` is not version-controlled; this repo is the tracked
+copy. `./install.sh pull` copies the other way, `./install.sh check` reports
+drift.
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/peter <goal>` | Score the goal. Small → one enforced loop. Big → epic: work graph, dedicated branch, autonomous drain. |
 
 ## Layout
 
 ```
-skills/build/SKILL.md            the loop + epic orchestration
-skills/build/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
+skills/peter/SKILL.md            the loop + epic orchestration
+skills/peter/references/         work-graph, state, eson wire format, e2e/security/ui gate specs
 agents/{backend,frontend}-builder.md   zone-fenced implementers
 agents/{security,ui}-auditor.md        read-only verdict-only auditors
 install.sh                       sync with ~/.claude
 ```
 
-Zones are defined by what the code does, not where it sits: `backend-builder`
-owns everything that doesn't render — API, CLI, library, pipeline, infra —
-and `frontend-builder` owns everything that does. Where a framework co-locates
-both in one file, the task goes to one builder; the write fence is what makes a
-parallel pair safe, and a shared file has no fence.
+## FAQ
 
-## Install
-
-```bash
-./install.sh
-```
-
-`~/.claude` is not version-controlled; this repo is the tracked copy.
-`./install.sh pull` copies the other way, `./install.sh check` reports drift.
-
-## Why "peter"
-
+**Why "peter"?**
 Named for [Peter Steinberger](https://x.com/steipete), whose July 2026
 question — "Are we still talking loops or did we shift to graphs yet?" —
 sparked the graph-engineering framing this repo implements: a stable org graph
-of specialist roles, a per-epic work graph of dependency-ordered tasks. The red
-node in the icon is his lobster 🦞. No affiliation or endorsement — just credit
-for the frame.
+of specialist roles, a per-epic work graph of dependency-ordered tasks. No
+affiliation or endorsement — just credit for the frame.
+
+**Is it a framework?**
+No. A skill, four agent files, and a JSONL contract. Claude Code is the
+runtime; delete the files and it's gone.
+
+**What if a task fails its gates?**
+The failure is routed to the builder that owns it, with the actual error text.
+It loops until green; a task that can't get there is filed as blocked and the
+drain moves on. Stop conditions hand control back instead of burning tokens.
+
+**Why are the subagent replies so terse?**
+[Honey](https://github.com/Green-PT/honey-for-devs) is the house standard:
+builders write the minimum code that satisfies the spec, durable prose stays
+terse, and every subagent return is an [ESON](https://github.com/Green-PT/honey-eson)
+handoff — the parent branches on fields and treats declared counts as
+truncation checksums. ESON is the message format only; `graph.jsonl` stays
+JSONL.
+
+**Can I use it with [ponytail](https://github.com/DietrichGebert/ponytail)?**
+Different layers, same family: ponytail shrinks what one agent writes; peter
+decides what gets built, in what order, and what "done" means. Peter's
+builders already write minimal code — it's the house standard.
 
 ## License
 
 [MIT](LICENSE). Use it, fork it, ship with it.
+
+## Star History
+
+<a href="https://www.star-history.com/green-pt/peter#history">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Green-PT/peter&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Green-PT/peter&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Green-PT/peter&type=Date" />
+ </picture>
+</a>
