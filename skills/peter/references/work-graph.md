@@ -62,9 +62,9 @@ never in `deps`; still `open` at close → listed in the report.
 Fold the file: merge per id, latest field wins. A task is **ready** iff
 `status == "open"` and every id in `deps` folds to `closed`. `blocked` is never
 ready — loopback counts reset each session, so re-dispatching would retry the
-same wall unbounded. Only an operator-appended `open` record re-enters it; the
-drain and the resume check never do. **The drain is
-scoped**: it dispatches planned tasks, plus discovered tasks only when they
+same wall unbounded. Only an `open` record the operator asked for re-enters it —
+appended by them, or by the parent on their answer to a `needs-input:` question;
+the drain and the resume check never do on their own. **The drain is scoped**: it dispatches planned tasks, plus discovered tasks only when they
 block an epic acceptance criterion. A discovery that blocks none is backlog —
 ready but never drained, open through close, listed in the report. Dispatch
 order: lowest `prio`, then file order. One task in flight at a time — `ready`
@@ -82,6 +82,8 @@ arrives:
 | Tasks converge / one becomes moot | append `closed` with `note` `"merged into <id>"` or `"moot: <why>"` — never delete the line |
 | Task fails its gates twice | append `blocked`, `note` `gates: <clauses>`; stop condition |
 | A decision needs the operator | append `blocked`, `note` `needs-input: <question>`; stop condition |
+| A dispatch is rejected or interrupted by the operator | append `blocked`, `note` `needs-input: dispatch rejected — <agent> for <id>`; stop condition, never retried |
+| The operator answers a `needs-input:` question | append the answer as a `note`, then `open` — the answer *is* the reopen |
 | Priority shifts | append the task with a new `prio` |
 
 Every mutation is one appended line — this file *is* the log of structural
